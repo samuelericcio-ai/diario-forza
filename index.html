@@ -291,7 +291,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 12; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 13; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -439,7 +439,9 @@ const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-line
 
 const store = {
   get(k, d){ try { const v = localStorage.getItem("df." + k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v){ try { v == null ? localStorage.removeItem("df." + k) : localStorage.setItem("df." + k, JSON.stringify(v)); } catch {} }
+  // Se il telefono non ha più spazio per l'app il salvataggio fallisce: lo dice invece di perdere i dati in silenzio.
+  set(k, v){ try { v == null ? localStorage.removeItem("df." + k) : localStorage.setItem("df." + k, JSON.stringify(v)); return true; }
+    catch { setTimeout(() => toast("Memoria piena: non riesco a salvare. Esporta un backup in Progressi → Storico."), 0); return false; } }
 };
 
 const S = {
@@ -533,12 +535,14 @@ function renderHome(){
   let resume = "";
   if (S.active) { const t = totals(), ap = activeDay();
     resume = `<div class="card resume"><div><div class="label">In corso</div><b>${ap.id} · S${ap.week} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
+  const planDone = doneIn(WEEKS).size >= DAYS.length;
   const startLabel = S.active ? (S.active.day === id && S.active.week === w ? "Riprendi allenamento" : null) : "Inizia allenamento";
   $("#v-home").innerHTML = `
     <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span style="display:flex;gap:8px;align-items:center"><span class="pill">${PLAN_LABEL}</span><button class="btn2" id="search-btn" style="height:36px;padding:0 12px" aria-label="Cerca esercizi">${SEARCH}&nbsp;Cerca</button></span></div>
     ${resume}
+    ${planDone && !S.active ? `<div class="banner"><span><b>Scheda finita: 6 settimane su 6.</b> Manda i risultati al coach e chiedigli la scheda nuova. Intanto puoi ripetere qualunque giorno.</span><button class="btn2" data-sendgo="1">Manda</button></div>` : ""}
     <div style="display:flex;flex-direction:column;gap:4px">
-      <span class="eyebrow" style="color:${p.color}">Settimana ${w} di ${WEEKS} · Giorno ${p.id}${!S.active && w === auto && id === nextDay(auto) ? " · tocca a te" : ""}</span>
+      <span class="eyebrow" style="color:${p.color}">Settimana ${w} di ${WEEKS} · Giorno ${p.id}${!S.active && !planDone && w === auto && id === nextDay(auto) ? " · tocca a te" : ""}</span>
       <h1 class="big" style="font-size:52px">${p.title.split(" · ").map(esc).join("<br>")}</h1>
     </div>
     <div class="stats">
@@ -620,7 +624,7 @@ function renderWork(){
       <div class="sg head"><span>#</span><span>${prev.date === BASE_DATE ? "2023" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span style="text-align:center">RIR</span><span></span></div>
       ${rows}
       <div class="sets-act"><button class="link" data-extra="1">+ Aggiungi serie</button>${n > ex.smin ? `<button class="link dim" data-extra="-1">− Togli serie</button>` : ""}</div>
-      <label class="exnote"><span class="label">Nota per il coach</span><textarea data-note="${ei}" rows="2" placeholder="Es. ultima serie pesante, fastidio alla spalla…">${esc(A.notes?.[ei] ?? "")}</textarea></label>
+      <label class="exnote"><span class="label">Nota per il coach</span><textarea data-note="${ei}" rows="2" maxlength="500" placeholder="Es. ultima serie pesante, fastidio alla spalla…">${esc(A.notes?.[ei] ?? "")}</textarea></label>
     </div>
     <div class="card manual">
       <span class="label">Timer manuale</span>
@@ -874,7 +878,8 @@ function progStorico(){
   const f = S.pfilter, list = S.history.filter(h => f === "all" ? true : f === "none" ? !placeFor(h.loc) : placeFor(h.loc)?.id === f);
   const chips = used.length ? `<div class="chips-f">${[["all", "Tutti"], ...used.map(pl => [pl.id, pl.name]), ["none", "Senza nome"]].map(([k, l]) =>
     `<button data-pfilter="${esc(k)}" aria-pressed="${k === f}">${esc(l)}</button>`).join("")}</div>` : "";
-  const hist = list.map(h => {
+  const shown = S.hlimit || 20;
+  const hist = list.slice(0, shown).map(h => {
     const p = dayMeta(h.day), ns = h.exercises.reduce((a, e) => a + e.sets.length, 0), prs = prsIn(h), pl = placeFor(h.loc);
     const where = !h.loc ? `<span class="muted">Posizione non registrata</span>`
       : pl ? `<span>${PIN}${esc(pl.name)}</span>`
@@ -890,7 +895,8 @@ function progStorico(){
   }).join("");
   return `${coachCard()}
     ${chips}
-    <div class="hist">${hist || `<div class="card empty">${S.history.length ? "Nessun allenamento in questo luogo." : "Ancora nessun allenamento salvato. Quando premi “Termina” lo trovi qui."}</div>`}</div>
+    <div class="hist">${hist || `<div class="card empty">${S.history.length ? "Nessun allenamento in questo luogo." : "Ancora nessun allenamento salvato. Quando premi “Termina” lo trovi qui."}</div>`}
+      ${list.length > shown ? `<button class="btn2" data-more="1" style="align-self:center">Mostra altri (${list.length - shown})</button>` : ""}</div>
     <div class="card backup">
       <b>Posizione</b>
       <p>All'inizio di ogni allenamento l'app salva dove ti trovi, solo su questo telefono. Ai luoghi dai tu un nome la prima volta: dopo li riconosce da sola.</p>
@@ -1085,13 +1091,20 @@ function startWorkout(day, week){
 function tick(ei, si){
   const A = S.active, p = activeDay(), ex = p.ex[ei], k = ei + "-" + si;
   const s = A.sets[k] ||= {};
-  if (s.done) { s.done = false; saveActive(); renderWork(); return; }
+  // Un doppio tocco veloce non deve annullare la serie appena segnata.
+  if (s.done) { if (Date.now() - (s.t || 0) < 800) return; s.done = false; saveActive(); renderWork(); return; }
   const ph = suggest(ex, prevSets(A.day, ex.n), si, ei);
   if (num(s.kg) == null) s.kg = ph[0] ? String(ph[0]).replace(".", ",") : "";
   if (num(s.reps) == null) s.reps = ph[1] != null ? String(ph[1]) : "";
   // Senza peso o ripetizioni la serie finirebbe a 0 nello storico e nell'Excel del coach: le chiede prima.
-  const miss = !ex.bw && num(s.kg) == null ? "kg" : !/′/.test(ex.r) && num(s.reps) == null ? "rp" : null;
-  if (miss) { saveActive(); const i = $(`#${miss}-${ei}-${si}`); i && i.focus(); return toast(miss === "kg" ? "Scrivi i kg di questa serie" : "Scrivi le ripetizioni fatte"); }
+  // Anche numeri impossibili (errori di battitura) finirebbero nell'Excel del coach.
+  const kgN = num(s.kg), rpN = num(s.reps), rirN = num(s.rir);
+  const miss = !ex.bw && kgN == null ? ["kg", "Scrivi i kg di questa serie"]
+    : kgN != null && (kgN < 0 || kgN > 500) ? ["kg", "Controlla i kg: " + s.kg + " non sembra giusto"]
+    : !/′/.test(ex.r) && rpN == null ? ["rp", "Scrivi le ripetizioni fatte"]
+    : rpN != null && (rpN < 1 || rpN > 100 || rpN % 1) ? ["rp", "Controlla le ripetizioni: " + s.reps + " non sembra giusto"]
+    : rirN != null && (rirN < 0 || rirN > 10) ? ["rir", "Il RIR va da 0 a 10"] : null;
+  if (miss) { saveActive(); renderWork(); const i = $(`#${miss[0]}-${ei}-${si}`); i && i.focus(); return toast(miss[1]); }
   s.done = true; s.t = Date.now();
   const left = i => setCount(i) - doneCount(i);
   if (ex.ss === "A") { if (left(ei + 1) > 0) A.idx = ei + 1; }
@@ -1282,7 +1295,8 @@ document.addEventListener("click", e => {
   }
   if (b.dataset.ptab) { S.ptab = b.dataset.ptab; store.set("ptab", S.ptab); return renderProg(); }
   if (b.dataset.pex) { S.pex = b.dataset.pex; S.ptab = "forza"; renderProg(); return window.scrollTo({ top: 0, behavior: "smooth" }); }
-  if (b.dataset.pfilter) { S.pfilter = b.dataset.pfilter; return renderProg(); }
+  if (b.dataset.pfilter) { S.pfilter = b.dataset.pfilter; S.hlimit = 20; return renderProg(); }
+  if (b.dataset.more) { const y = window.scrollY; S.hlimit = (S.hlimit || 20) + 20; renderProg(); return window.scrollTo(0, y); }
   if (b.dataset.name) { S.naming = b.dataset.name; renderProg(); const i = document.getElementById("pn-" + b.dataset.name); i && i.focus(); return; }
   if (b.dataset.pdel) { S.places = S.places.filter(pl => pl.id !== b.dataset.pdel); if (S.pfilter === b.dataset.pdel) S.pfilter = "all"; savePlaces(); return renderProg(); }
   if (b.id === "gps-toggle") { S.gps = !S.gps; store.set("gps", S.gps); return renderProg(); }
@@ -1291,6 +1305,7 @@ document.addEventListener("click", e => {
   if (b.dataset.bdel) { S.body = S.body.filter(x => x.id !== b.dataset.bdel); saveBody(); return renderProg(); }
   if (b.id === "export") return exportData();
   if (b.id === "send-coach") return shareCoach(b);
+  if (b.dataset.sendgo) { S.ptab = "storico"; store.set("ptab", "storico"); go("prog"); return window.scrollTo(0, 0); }
   if (b.id === "wipe") {
     if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "Sicuro? Tocca di nuovo per cancellare"; setTimeout(() => { if (b.isConnected) renderProg(); }, 4000); return; }
     S.history = []; S.body = S.body.filter(b => !b.example); S.places = S.places.filter(pl => !pl.example);
