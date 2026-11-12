@@ -827,10 +827,10 @@ function progStorico(){
       <p>I dati restano su questo telefono. Esporta ogni tanto un file di backup (in iCloud Drive, per esempio) per non perderli se cambi telefono.</p>
       <div class="btns"><button class="btn2" id="export">Esporta backup</button><button class="btn2" id="import">Importa backup</button></div>
     </div>
-    ${S.history.some(h => !h.example) ? `<div class="card backup">
+    ${S.history.length ? `<div class="card backup">
       <b>Ricomincia da zero</b>
-      <p>Cancella tutti gli allenamenti salvati su questo telefono. Peso, girovita e luoghi restano. Non si può annullare: se vuoi conservarli, prima esporta un backup.</p>
-      <div class="btns"><button class="btn2" id="wipe" style="color:var(--red);border-color:var(--red)">Cancella tutti gli allenamenti (${S.history.filter(h => !h.example).length})</button></div>
+      <p>Cancella tutti gli allenamenti salvati su questo telefono, compresi quelli di esempio. Peso, girovita e luoghi restano. Non si può annullare: se vuoi conservarli, prima esporta un backup.</p>
+      <div class="btns"><button class="btn2" id="wipe" style="color:var(--red);border-color:var(--red)">Cancella tutti gli allenamenti (${S.history.length})</button></div>
     </div>` : ""}`;
 }
 
@@ -1116,7 +1116,8 @@ document.addEventListener("click", e => {
   if (b.id === "export") return exportData();
   if (b.id === "wipe") {
     if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "Sicuro? Tocca di nuovo per cancellare"; setTimeout(() => { if (b.isConnected) renderProg(); }, 4000); return; }
-    S.history = S.history.filter(h => h.example); saveHistory(); S.wpick = null; renderProg(); return toast("Allenamenti cancellati");
+    S.history = []; S.body = S.body.filter(b => !b.example); S.places = S.places.filter(pl => !pl.example);
+    saveHistory(); saveBody(); savePlaces(); S.wpick = null; renderProg(); return toast("Allenamenti cancellati");
   }
   if (b.id === "import") return $("#import-file").click();
 });
