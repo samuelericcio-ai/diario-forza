@@ -98,7 +98,7 @@ body.no-tabs .screen{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 150px
 .chips .ss{background:none;border:1px solid var(--blue);color:var(--blue)}
 .note{margin:0;font-size:13.5px;color:var(--muted)}
 .sets{display:flex;flex-direction:column;gap:6px}
-.sg{display:grid;grid-template-columns:30px minmax(0,1fr) 74px 60px 48px;gap:8px;align-items:center;padding:6px 4px;border-radius:12px}
+.sg{display:grid;grid-template-columns:24px minmax(0,1fr) 66px 52px 44px 46px;gap:6px;align-items:center;padding:6px 4px;border-radius:12px}
 .sg.head{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-block:0}
 .sg .n{text-align:center;font-weight:700;color:var(--muted)}
 .sg .prev{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -117,6 +117,9 @@ body.no-tabs .screen{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 150px
 .sg.done .tick{background:var(--green);border-color:var(--green)}
 .sg.done .tick svg{stroke:var(--on-green)}
 .sets-act{display:flex;gap:16px}
+.exnote{display:flex;flex-direction:column;gap:6px}
+.exnote textarea{width:100%;min-height:64px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;padding:10px 12px;resize:vertical}
+.exnote textarea::placeholder{color:var(--faint)}
 .link{border:0;background:none;color:var(--red);font-weight:700;font-size:14px;height:44px;padding:0 2px}
 .link.dim{color:var(--muted)}
 .manual{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
@@ -288,63 +291,63 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 10; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 11; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
-  {d:"Quadricipiti", n:"Squat", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Petto", n:"Panca piana", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Quadricipiti", n:"Pendolum squat", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Deltoidi", n:"Military Press", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
-  {d:"Addome", n:"Lavoro Sul core a piacere", bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
-  {d:"Petto", n:"Croci cavi alti", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Alzate laterali a stella", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
+  {d:"Quadricipiti", n:"Squat", row:12, w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Panca piana", row:13, w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Quadricipiti", n:"Pendolum squat", row:14, w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Deltoidi", n:"Military Press", row:15, w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Addome", n:"Lavoro Sul core a piacere", row:16, bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Petto", n:"Croci cavi alti", row:17, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Alzate laterali a stella", row:18, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:19, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", row:20, w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
  {id:"B", short:"Tirata", title:"Tirata · Forza", color:"var(--blue)", ex:[
-  {d:"Femorali", n:"Stacco da terra", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Row T-Bar", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Lat Machine avanti larga", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Lat Triangolo", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
-  {d:"Addome", n:"Lavoro Sul core a piacere", bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
-  {d:"Petto", n:"Croci cavi alti", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Alzate laterali a stella", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
+  {d:"Femorali", n:"Stacco da terra", row:25, w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Row T-Bar", row:26, w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Machine avanti larga", row:27, w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Triangolo", row:28, w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Addome", n:"Lavoro Sul core a piacere", row:29, bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Petto", n:"Croci cavi alti", row:30, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Alzate laterali a stella", row:31, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:32, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", row:33, w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
  {id:"C", short:"Sp+Tir", title:"Spinta · Tirata · Ipertrofia", color:"var(--yellow)", ex:[
-  {d:"Petto", n:"Panca Piana Presa Larga", w:[["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Petto", n:"Spinte panca 30°", w:[["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Petto", n:"Croci cavi bassi", w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Lat machine avanti", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
-  {d:"Dorso", n:"Pulley basso", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
-  {d:"Tricipiti", n:"Push Down Corda", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Bicipiti", n:"Curl manubri", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
+  {d:"Petto", n:"Panca Piana Presa Larga", row:38, w:[["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Spinte panca 30°", row:39, w:[["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Croci cavi bassi", row:40, w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat machine avanti", row:41, w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Dorso", n:"Pulley basso", row:42, w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"Push Down Corda", row:43, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Curl manubri", row:44, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:45, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", row:46, w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
  {id:"D", short:"Gambe", title:"Gambe · Spalle · Braccia", color:"var(--green)", ex:[
-  {d:"Quadricipiti", n:"Squat", w:[["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Femorali", n:"Pressa 45°", w:[["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Femorali", n:"Squat Bulgaro", w:[["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Deltoidi", n:"Alzate laterali", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
-  {d:"Tricipiti", n:"French press manubri", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Bicipiti", n:"Hammer Curl", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
+  {d:"Quadricipiti", n:"Squat", row:51, w:[["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Femorali", n:"Pressa 45°", row:52, w:[["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Femorali", n:"Squat Bulgaro", row:53, w:[["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Deltoidi", n:"Alzate laterali", row:54, w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:55, w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"French press manubri", row:56, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Hammer Curl", row:57, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:58, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", row:59, w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
  {id:"E", short:"Tir+Sp", title:"Tirata · Spinta · Ipertrofia", color:"var(--white)", ex:[
-  {d:"Dorso", n:"T_Bar Row Presa Larga", w:[["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Lat Triangolo", w:[["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Dorso", n:"Pulldown alla corda", w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
-  {d:"Petto", n:"Panca inclinata con bilanciere", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
-  {d:"Petto", n:"Croci panca piana", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
-  {d:"Tricipiti", n:"Push Down Corda", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Bicipiti", n:"Curl Panca 45°", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
-  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
-  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
+  {d:"Dorso", n:"T_Bar Row Presa Larga", row:64, w:[["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Triangolo", row:65, w:[["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Pulldown alla corda", row:66, w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Panca inclinata con bilanciere", row:67, w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Petto", n:"Croci panca piana", row:68, w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"Push Down Corda", row:69, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Curl Panca 45°", row:70, w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", row:71, w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", row:72, w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]}
 ];
 const LIFTS = ["Squat", "Panca piana", "Stacco da terra", "Row T-Bar"];
@@ -422,7 +425,7 @@ function dayOf(id, w){
   return dayCache[k] = { ...d, week: w, ex: d.ex.flatMap(e => {
     const v = e.w[w - 1]; if (!v) return [];
     const [sl, r, rest, rir, int, note] = v;
-    return [{ d: e.d, n: e.n, bw: e.bw, sl, s: Math.max(...sl.split("-").map(Number)), smin: Math.min(...sl.split("-").map(Number)), r: pretty(r), rest: REST[rest] ?? 60, restL: rest === "Q.B." ? "Q.B." : pretty(rest), rir, int, note }];
+    return [{ d: e.d, n: e.n, row: e.row, bw: e.bw, sl, s: Math.max(...sl.split("-").map(Number)), smin: Math.min(...sl.split("-").map(Number)), r: pretty(r), rest: REST[rest] ?? 60, restL: rest === "Q.B." ? "Q.B." : pretty(rest), rir, int, note }];
   }) };
 }
 const dayMeta = id => DAYS.find(x => x.id === id) || OLD_DAYS.find(x => x.id === id) || { id, title: "Allenamento", color: "var(--muted)" };
@@ -590,6 +593,7 @@ function renderWork(){
       <span class="prev">${ph.length ? (ex.bw && !ph[0] ? "corpo" : kg(ph[0])) + " × " + ph[1] : "—"}</span>
       <label><span class="sr">Kg serie ${si + 1}</span><input id="kg-${ei}-${si}" data-k="${ei}-${si}" data-f="kg" inputmode="decimal" enterkeyhint="next" placeholder="${phKg === "—" || phKg === "" ? phKg : kg(phKg)}" value="${esc(s.kg ?? "")}"></label>
       <label><span class="sr">Ripetizioni serie ${si + 1}</span><input id="rp-${ei}-${si}" data-k="${ei}-${si}" data-f="reps" inputmode="numeric" enterkeyhint="done" placeholder="${sg[1] ?? ""}" value="${esc(s.reps ?? "")}"></label>
+      <label><span class="sr">RIR serie ${si + 1}</span><input id="rir-${ei}-${si}" data-k="${ei}-${si}" data-f="rir" inputmode="numeric" enterkeyhint="done" placeholder="${esc(ex.rir)}" value="${esc(s.rir ?? "")}" style="font-size:16px"></label>
       <button class="tick" data-tick="${ei}-${si}" aria-pressed="${!!s.done}" aria-label="Serie ${si + 1} ${s.done ? "fatta, tocca per annullare" : "fatta"}">${CHECK}</button>
     </div>`;
   }).join("");
@@ -611,9 +615,10 @@ function renderWork(){
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
-      <div class="sg head"><span>Serie</span><span>${prev.date === BASE_DATE ? "2023" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span></span></div>
+      <div class="sg head"><span>#</span><span>${prev.date === BASE_DATE ? "2023" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span style="text-align:center">RIR</span><span></span></div>
       ${rows}
       <div class="sets-act"><button class="link" data-extra="1">+ Aggiungi serie</button>${n > ex.smin ? `<button class="link dim" data-extra="-1">− Togli serie</button>` : ""}</div>
+      <label class="exnote"><span class="label">Nota per il coach</span><textarea data-note="${ei}" rows="2" placeholder="Es. ultima serie pesante, fastidio alla spalla…">${esc(A.notes?.[ei] ?? "")}</textarea></label>
     </div>
     <div class="card manual">
       <span class="label">Timer manuale</span>
@@ -877,11 +882,12 @@ function progStorico(){
       <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
       <div class="where"><span>${CLOCK}${timeRange(h)}</span>${where}</div>
       <div class="st"><span><b>${tons(sessTon(h))} t</b> sollevate</span><span><b>${ns}</b> serie</span>${h.minutes ? `<span><b>${h.minutes}</b> min</span>` : ""}${prs.length ? `<span class="up"><b class="up">${prs.length}</b> record</span>` : ""}</div>
-      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps).join("  ")}</span></li>`).join("")}</ul></details>
+      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps + (s.rir != null ? " @" + s.rir : "")).join("  ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
       <button class="del" data-del="${esc(h.id)}">Elimina</button>
     </article>`;
   }).join("");
-  return `${chips}
+  return `${coachCard()}
+    ${chips}
     <div class="hist">${hist || `<div class="card empty">${S.history.length ? "Nessun allenamento in questo luogo." : "Ancora nessun allenamento salvato. Quando premi “Termina” lo trovi qui."}</div>`}</div>
     <div class="card backup">
       <b>Posizione</b>
@@ -1081,7 +1087,7 @@ function tick(ei, si){
   const ph = suggest(ex, prevSets(A.day, ex.n), si);
   if (num(s.kg) == null) s.kg = ph[0] ? String(ph[0]).replace(".", ",") : "";
   if (num(s.reps) == null) s.reps = ph[1] != null ? String(ph[1]) : "";
-  s.done = true;
+  s.done = true; s.t = Date.now();
   const left = i => setCount(i) - doneCount(i);
   if (ex.ss === "A") { if (left(ei + 1) > 0) A.idx = ei + 1; }
   else {
@@ -1099,9 +1105,14 @@ function finish(btn){
   finishArmed = 0;
   const A = S.active, p = activeDay();
   if (t.done) {
-    const exercises = p.ex.map((ex, ei) => ({ name: ex.n,
-      sets: Array.from({length:setCount(ei)}, (_, si) => A.sets[ei + "-" + si]).filter(s => s && s.done).map(s => ({ kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0 })) }))
-      .filter(e => e.sets.length);
+    // Recupero reale = tempo fino alla serie successiva dello stesso esercizio (se meno di 15 minuti).
+    const exercises = p.ex.map((ex, ei) => {
+      const done = Array.from({length:setCount(ei)}, (_, si) => A.sets[ei + "-" + si]).filter(s => s && s.done);
+      const sets = done.map((s, i) => { const gap = s.t && done[i + 1]?.t ? Math.round((done[i + 1].t - s.t) / 1000) : null;
+        return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: gap > 0 && gap < 900 ? gap : undefined }; });
+      const note = (A.notes?.[ei] || "").trim();
+      return { name: ex.n, row: ex.row, sets, ...(note ? { note } : {}) };
+    }).filter(e => e.sets.length || e.note);
     const now = new Date();
     S.history.unshift({ id: "s" + now.getTime(), plan: PLAN_ID, week: A.week, day: A.day, date: now.toISOString(), startedAt: A.startedAt, loc: A.loc || null, exercises,
       minutes: Math.max(1, Math.round((now - new Date(A.startedAt)) / 60000)) });
@@ -1132,6 +1143,94 @@ function backupDue(){
   if (real.length < 3) return false;
   const last = store.get("lastBackup", null);
   return !last || Date.now() - new Date(last) > 30 * 864e5;
+}
+// Risultati per il coach: si riempie il suo Excel (scheda-coach.xlsx) nelle celle vuote di ogni settimana,
+// senza toccare grafici e formule. Settimana 1 parte dalla colonna L, ogni settimana dopo è 85 colonne più a destra.
+const XCOL = { feedback: 11, data: 15, reptot: 16, tonn: 17, set: 18 };
+const colName = n => { let s = ""; for (n++; n; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+const xmlEsc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const restTxt = s => { const m = Math.floor(s / 60), r = s % 60; return (m ? m + "'" : "") + (r ? String(r).padStart(m ? 2 : 1, "0") + '"' : ""); };
+// L'ultimo allenamento fatto di ogni giorno in ogni settimana.
+function coachSessions(){
+  const seen = new Set(), out = [];
+  for (const h of [...S.history].filter(onPlan).sort((a, b) => b.date.localeCompare(a.date))) {
+    const k = h.week + h.day; if (!h.week || seen.has(k)) continue; seen.add(k); out.push(h);
+  }
+  return out;
+}
+function loadZip(){
+  if (window.JSZip) return Promise.resolve();
+  return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = "jszip.min.js"; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+}
+async function buildCoachFile(){
+  const list = coachSessions(); if (!list.length) return null;
+  await loadZip();
+  const zip = await JSZip.loadAsync(await (await fetch("scheda-coach.xlsx")).arrayBuffer());
+  const edits = {}, put = (c, r, v) => { edits[colName(c) + r] = v; };
+  for (const h of list) {
+    const off = 85 * (h.week - 1), base = DAYS.find(d => d.id === h.day);
+    const date = new Date(h.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+    for (const e of h.exercises) {
+      const r = e.row || base?.ex.find(x => x.n === canon(e.name))?.row; if (!r) continue;
+      put(XCOL.data + off, r, date);
+      e.sets.slice(0, 10).forEach((s, i) => {
+        const c = XCOL.set + 5 * i + off;
+        if (s.kg) put(c, r, s.kg);
+        put(c + 2, r, s.reps);
+        if (s.rest) put(c + 3, r, restTxt(s.rest));
+        if (s.rir != null) put(c + 4, r, s.rir);
+      });
+      if (e.note) put(XCOL.feedback + off, r, e.note);
+      // Valori già calcolati, per chi apre il file in un'anteprima che non ricalcola le formule.
+      put(XCOL.reptot + off, r, { f: e.sets.slice(0, 10).reduce((a, s) => a + s.reps, 0) });
+      put(XCOL.tonn + off, r, { f: e.sets.slice(0, 10).reduce((a, s) => a + s.kg * s.reps, 0) });
+    }
+  }
+  const path = "xl/worksheets/sheet1.xml";
+  let xml = await zip.file(path).async("string");
+  xml = xml.replace(/<c r="([A-Z]+\d+)"([^>]*?)(\/>|>([\s\S]*?)<\/c>)/g, (all, ref, attrs, _, inner) => {
+    if (!(ref in edits)) return all;
+    const v = edits[ref];
+    if (v && typeof v === "object") return inner && inner.includes("<f") ? `<c r="${ref}"${attrs}>${inner.replace(/<v>[^<]*<\/v>/, "")}<v>${+v.f.toFixed(2)}</v></c>` : all;
+    attrs = attrs.replace(/\s+t="[^"]*"/, "");
+    return typeof v === "number" ? `<c r="${ref}"${attrs}><v>${v}</v></c>` : `<c r="${ref}"${attrs} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+  });
+  zip.file(path, xml);
+  // Excel ricalcola totali, tabelle e grafici quando il coach apre il file.
+  const wb = (await zip.file("xl/workbook.xml").async("string")).replace(/<calcPr\b([^>]*?)\s*\/>/, (m, a) => a.includes("fullCalcOnLoad") ? m : `<calcPr${a} fullCalcOnLoad="1"/>`);
+  zip.file("xl/workbook.xml", wb);
+  const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const weeks = [...new Set(list.map(h => h.week))].sort((a, b) => a - b);
+  const name = `RICCIO SAMUELE risultati S${weeks.join("-S")} ${new Date().toLocaleDateString("it-IT").replace(/\//g, "-")}.xlsx`;
+  return { file: new File([blob], name, { type: blob.type }), weeks };
+}
+let coachFile = null;
+async function shareCoach(btn){
+  if (!coachFile) {
+    btn.disabled = true; btn.textContent = "Preparo il file…";
+    try { coachFile = await buildCoachFile(); } catch { coachFile = null; }
+    btn.disabled = false;
+    if (!coachFile) { renderProg(); return toast("Non riesco a preparare il file, riprova"); }
+  }
+  const { file, weeks } = coachFile, text = `Risultati settimana ${weeks.join(", ")} · ${PLAN_LABEL}`;
+  const done = () => { store.set("lastSent", new Date().toISOString()); coachFile = null; renderProg(); };
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: text }); return done(); } }
+  catch (e) {
+    if (e && e.name === "AbortError") { coachFile = null; return renderProg(); }
+    // iPhone: se la preparazione ci ha messo troppo, chiede un secondo tocco per aprire la condivisione.
+    if (e && e.name === "NotAllowedError") { btn.textContent = "File pronto · tocca per mandarlo"; return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  done();
+}
+function coachCard(){
+  const list = coachSessions(), weeks = [...new Set(list.map(h => h.week))].sort((a, b) => a - b), last = store.get("lastSent", null);
+  return `<div class="card backup">
+      <b>Manda al coach</b>
+      <p>${list.length ? `Compilo il suo Excel con pesi, ripetizioni, recuperi, RIR e note di ${list.length === 1 ? "1 allenamento" : list.length + " allenamenti"} (settimana ${weeks.join(", ")}). Poi scegli WhatsApp e il suo nome.` : "Quando avrai finito un allenamento della scheda, da qui compili il suo Excel e lo mandi su WhatsApp."}${last ? ` Ultimo invio: ${fdate(last, {weekday:"short", day:"numeric", month:"short"})}.` : ""}</p>
+      ${list.length ? `<button class="cta" id="send-coach" style="height:52px">Manda risultati</button>` : ""}
+    </div>`;
 }
 $("#import-file").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
@@ -1186,6 +1285,7 @@ document.addEventListener("click", e => {
   if (b.id === "ex-clear") return clearExample();
   if (b.dataset.bdel) { S.body = S.body.filter(x => x.id !== b.dataset.bdel); saveBody(); return renderProg(); }
   if (b.id === "export") return exportData();
+  if (b.id === "send-coach") return shareCoach(b);
   if (b.id === "wipe") {
     if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "Sicuro? Tocca di nuovo per cancellare"; setTimeout(() => { if (b.isConnected) renderProg(); }, 4000); return; }
     S.history = []; S.body = S.body.filter(b => !b.example); S.places = S.places.filter(pl => !pl.example);
@@ -1196,6 +1296,7 @@ document.addEventListener("click", e => {
 document.addEventListener("input", e => {
   const i = e.target;
   if (i.id === "q") { S.q = i.value; $("#sres").innerHTML = searchResults(); return; }
+  if (i.dataset.note && S.active) { (S.active.notes ||= {})[i.dataset.note] = i.value; saveActive(); return; }
   if (!i.dataset.k || !S.active) return;
   (S.active.sets[i.dataset.k] ||= {})[i.dataset.f] = i.value; saveActive();
 });

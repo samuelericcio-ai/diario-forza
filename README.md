@@ -4,4 +4,6 @@ App per il telefono di Samuele Riccio per seguire la scheda del 06/12/2026 (1ª 
 
 Ogni esercizio ha una sua pagina, da Oggi o con il tasto Cerca, con le 6 settimane, il record e una selezione di video su YouTube.
 
+Durante l'allenamento si segnano anche RIR e una nota per esercizio, e il recupero reale viene preso dal timer. Con **Manda risultati** (Progressi → Storico) l'app compila l'Excel del coach con i risultati e lo apre in condivisione per mandarlo su WhatsApp.
+
 Si installa da Safari con Condividi → Aggiungi alla schermata Home e funziona anche senza connessione. I dati degli allenamenti restano solo sul telefono: per non perderli usa Esporta backup in Progressi → Storico.
