@@ -202,6 +202,8 @@ button.lift{border:0;text-align:left;color:inherit}
 .new{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--green);border-radius:4px;padding:1px 5px;vertical-align:2px}
 .bars.b8,.bars-x.b8{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
 .bars.b8 span{font-size:10.5px}
+.bodyfig{width:100%;height:auto;display:block;max-height:440px}
+.bodyfig g[role=button]:focus{outline:none}
 .bodyform{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
 .bodyform .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .bodyform label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
@@ -453,7 +455,9 @@ const S = {
   info: null,                           // esercizio aperto nella sua pagina (null = ricerca)
   infoFrom: "home",                     // schermata a cui torna "Indietro"
   fromSearch: false,                    // la pagina dell'esercizio è stata aperta dalla ricerca
-  q: ""                                 // testo cercato
+  q: "",                                // testo cercato
+  height: store.get("height", null),    // altezza in cm
+  meas: "waist"                         // misura nel grafico di Corpo
 };
 const saveHistory = () => { S.history.sort((a, b) => b.date.localeCompare(a.date)); store.set("history", S.history); };
 const savePlaces = () => store.set("places", S.places);
@@ -769,30 +773,92 @@ function habits(){
     </div>`;
 }
 
+// Misure del corpo: k = campo, good = 1 se è meglio che salga, -1 se è meglio che scenda, 0 neutro.
+// x1–x2 e y = dove sta la linea sulla sagoma; side = da che parte va l'etichetta, ly = altezza dell'etichetta.
+const MEAS = [
+  { k: "collo", l: "Collo", good: 0, y: 72, x1: 160, x2: 180, side: "r", ly: 62 },
+  { k: "spalle", l: "Spalle", good: 1, y: 92, x1: 110, x2: 230, side: "l", ly: 86 },
+  { k: "petto", l: "Petto", good: 1, y: 124, x1: 118, x2: 222, side: "r", ly: 118 },
+  { k: "braccio", l: "Braccio", good: 1, y: 140, x1: 92, x2: 116, side: "l", ly: 146 },
+  { k: "waist", l: "Vita", good: -1, y: 188, x1: 133, x2: 207, side: "r", ly: 182 },
+  { k: "avambraccio", l: "Avambraccio", good: 1, y: 210, x1: 80, x2: 102, side: "l", ly: 212 },
+  { k: "fianchi", l: "Fianchi", good: -1, y: 232, x1: 127, x2: 213, side: "r", ly: 238 },
+  { k: "coscia", l: "Coscia", good: 1, y: 284, x1: 179, x2: 215, side: "r", ly: 294 },
+  { k: "polpaccio", l: "Polpaccio", good: 1, y: 360, x1: 127, x2: 153, side: "l", ly: 344 }
+];
+const mval = (b, k) => k === "waist" ? b.waist : k === "kg" ? b.kg : k === "fat" ? b.fat : b.m?.[k];
+// Prima e ultima rilevazione di una misura (le misure non si prendono tutte ogni volta).
+function mrange(k){ const xs = S.body.filter(b => mval(b, k) != null); return { xs, first: xs[0], last: xs[xs.length - 1] }; }
+
+function bodyFigure(){
+  const sel = S.meas;
+  const marks = MEAS.map(m => {
+    const { first, last } = mrange(m.k), v = last ? mval(last, m.k) : null, d = last && first !== last ? v - mval(first, m.k) : null;
+    const lx = m.side === "l" ? 6 : 334, anchor = m.side === "l" ? "start" : "end", tx = m.side === "l" ? 62 : 278;
+    const on = sel === m.k, col = on ? "var(--red)" : v != null ? "var(--ink)" : "var(--faint)";
+    const dcol = d == null || Math.abs(d) < 0.05 || !m.good ? "var(--muted)" : d * m.good > 0 ? "var(--green)" : "var(--red)";
+    return `<g data-meas="${m.k}" role="button" tabindex="0" aria-label="${m.l}: ${v != null ? kg(v) + " cm" : "non misurato"}" style="cursor:pointer">
+      <rect x="${m.side === "l" ? 0 : 270}" y="${m.ly - 16}" width="70" height="34" fill="transparent"/>
+      <line x1="${m.x1}" x2="${m.x2}" y1="${m.y}" y2="${m.y}" stroke="${col}" stroke-width="${on ? 3 : 2}" stroke-dasharray="${v != null ? "0" : "3 3"}" stroke-linecap="round"/>
+      <path d="M${m.side === "l" ? m.x1 : m.x2} ${m.y} L${tx} ${m.ly}" stroke="${col}" stroke-width="1" fill="none" opacity=".55"/>
+      <text x="${lx}" y="${m.ly - 3}" text-anchor="${anchor}" font-size="11.5" font-weight="700" fill="${on ? "var(--red)" : "var(--muted)"}">${m.l}</text>
+      <text x="${lx}" y="${m.ly + 12}" text-anchor="${anchor}" font-size="12.5" fill="var(--ink)">${v != null ? kg(v) : "—"}${d != null && Math.abs(d) >= 0.05 ? `<tspan fill="${dcol}" font-size="11"> ${d >= 0 ? "+" : "−"}${kg(Math.abs(Math.round(d * 10) / 10))}</tspan>` : ""}</text></g>`;
+  }).join("");
+  return `<svg viewBox="0 0 340 420" class="bodyfig" role="group" aria-label="Sagoma con le misure del corpo in centimetri">
+    <g fill="var(--card2)" stroke="var(--line)" stroke-width="1.5" stroke-linejoin="round">
+      <ellipse cx="170" cy="38" rx="21" ry="26"/>
+      <path d="M161 60 L179 60 L181 82 L159 82 Z"/>
+      <path d="M128 86 Q170 78 212 86 Q232 90 232 108 L224 150 Q214 172 208 190 Q216 212 215 236 L208 256 L132 256 L125 236 Q124 212 132 190 Q126 172 116 150 L108 108 Q108 90 128 86 Z"/>
+    </g>
+    <g fill="none" stroke="var(--card2)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M114 98 L102 162 L92 236" stroke-width="22"/><path d="M226 98 L238 162 L248 236" stroke-width="22"/>
+      <path d="M150 250 L144 330 L141 404" stroke-width="30"/><path d="M190 250 L196 330 L199 404" stroke-width="30"/>
+    </g>
+    <g fill="none" stroke="var(--line)" stroke-width="1.2" stroke-linecap="round" opacity=".9">
+      <path d="M170 256 L170 276"/><path d="M89 246 L88 256"/><path d="M251 246 L252 256"/>
+    </g>
+    ${marks}
+  </svg>`;
+}
+
 function progCorpo(){
-  const b = S.body, first = b[0], last = b[b.length - 1], today = new Date().toISOString().slice(0, 10);
-  const t = b.find(x => x.date.slice(0, 10) === today);
+  const b = S.body, today = new Date().toISOString().slice(0, 10), hgt = S.height;
+  const t = b.find(x => x.date.slice(0, 10) === today && !x.example);
+  const kgR = mrange("kg"), wR = mrange("waist"), fR = mrange("fat");
+  const lastKg = kgR.last?.kg, lastW = wR.last?.waist;
+  const bmi = hgt && lastKg ? lastKg / (hgt / 100) ** 2 : null, whtr = hgt && lastW ? lastW / hgt : null;
+  const sel = MEAS.find(m => m.k === S.meas) || (S.meas === "kg" ? { k: "kg", l: "Peso", good: 0 } : null);
+  const sr = sel ? mrange(sel.k) : null;
+  const fld = (id, l, unit, v, ph) => `<label><span>${l}</span><span class="fld"><input id="b-${id}" inputmode="decimal" placeholder="${ph ?? ""}" value="${v != null ? kg(v) : ""}"><em>${unit}</em></span></label>`;
+  const lastOf = k => { const r = mrange(k).last; return r ? kg(mval(r, k)) : ""; };
   return `
-    <form class="card bodyform" id="bodyform">
-      <b>${t ? "Misure di oggi (puoi correggerle)" : "Misure di oggi"}</b>
-      <div class="two">
-        <label><span>Peso</span><span class="fld"><input id="b-kg" name="kg" inputmode="decimal" placeholder="${last ? kg(last.kg) : "80"}" value="${t ? kg(t.kg) : ""}"><em>kg</em></span></label>
-        <label><span>Girovita</span><span class="fld"><input id="b-waist" name="waist" inputmode="decimal" placeholder="${last?.waist ? kg(last.waist) : "85"}" value="${t?.waist ? kg(t.waist) : ""}"><em>cm</em></span></label>
-      </div>
-      <button class="cta" style="height:50px;font-size:19px">Salva misure</button>
-      <p class="note" style="font-size:12.5px">Pesati la mattina, a digiuno, 1–2 volte a settimana. Il girovita all'altezza dell'ombelico.</p>
-    </form>
-    ${b.length >= 2 ? `
-    <div class="kpis card" style="padding:14px 16px">
-      <div><small>Peso</small><b>${delta(last.kg - first.kg, "kg", 0)}</b></div>
-      <div><small>Girovita</small><b>${first.waist && last.waist ? delta(last.waist - first.waist, "cm", -1) : "—"}</b></div>
-      <div><small>Da</small><b>${fdate(first.date)}</b></div>
+    <div class="card" style="padding:12px 10px 6px">${bodyFigure()}
+      <p class="note" style="font-size:12.5px;text-align:center;margin:0 0 6px">Tocca una misura per vedere come cambia. Accanto al valore c'è la differenza dalla prima volta.</p></div>
+    <div class="card kpis" style="padding:14px 16px">
+      <div><small>Peso</small><b>${lastKg ? kg(lastKg) + " kg" : "—"}</b>${kgR.xs.length > 1 ? `<small>${delta(lastKg - kgR.first.kg, "kg", 0)}</small>` : ""}</div>
+      <div><small>BMI</small><b>${bmi ? kg(Math.round(bmi * 10) / 10) : "—"}</b><small>${hgt ? "altezza " + kg(hgt) + " cm" : "manca l'altezza"}</small></div>
+      <div><small>Vita / altezza</small><b class="${whtr ? (whtr < 0.5 ? "up" : "down") : ""}">${whtr ? whtr.toFixed(2).replace(".", ",") : "—"}</b><small>sotto 0,50 è bene</small></div>
     </div>
-    <div class="card chart"><div class="hd"><b>Peso</b><span>kg</span></div>${lineChart(b, p => p.kg, "var(--blue)", "kg", "Peso")}</div>
-    ${b.filter(x => x.waist).length >= 2 ? `<div class="card chart"><div class="hd"><b>Girovita</b><span>cm</span></div>${lineChart(b.filter(x => x.waist), p => p.waist, "var(--yellow)", "cm", "Girovita")}</div>` : ""}
-    <p class="note">In ricomposizione è normale che il peso resti quasi fermo: conta che il girovita scenda mentre i carichi salgono.</p>`
-    : `<div class="card empty">Salva le misure un paio di volte per vedere i grafici di peso e girovita.</div>`}
-    ${b.length ? `<div class="card list">${[...b].reverse().slice(0, 8).map(x => `<div class="it"><b style="font-weight:500">${fdate(x.date, {weekday:"short", day:"numeric", month:"short"})}</b><span>${kg(x.kg)} kg${x.waist ? " · " + kg(x.waist) + " cm" : ""} <button class="link dim" style="height:32px;font-size:12.5px" data-bdel="${esc(x.id)}">Elimina</button></span></div>`).join("")}</div>` : ""}`;
+    ${fR.last ? `<div class="card kpis" style="padding:14px 16px;grid-template-columns:repeat(2,minmax(0,1fr))"><div><small>Massa grassa</small><b>${kg(fR.last.fat)} %</b></div><div><small>Dalla prima volta</small><b>${fR.xs.length > 1 ? delta(fR.last.fat - fR.first.fat, "%", -1) : "—"}</b></div></div>` : ""}
+    <div class="chips-f" role="group" aria-label="Misura nel grafico">${[{ k: "kg", l: "Peso" }, ...MEAS, { k: "fat", l: "Grasso %" }].map(m => `<button data-meas="${m.k}" aria-pressed="${S.meas === m.k}">${m.l}</button>`).join("")}</div>
+    ${sel || S.meas === "fat" ? (() => { const k = S.meas, r = mrange(k), label = sel ? sel.l : "Massa grassa", unit = k === "kg" ? "kg" : k === "fat" ? "%" : "cm";
+      return `<div class="card chart"><div class="hd"><b>${label}</b><span>${unit} · ${r.xs.length} ${r.xs.length === 1 ? "rilevazione" : "rilevazioni"}</span></div>${r.xs.length ? lineChart(r.xs, p => mval(p, k), "var(--blue)", unit, label) : `<p class="note">Ancora nessuna rilevazione.</p>`}</div>`; })() : ""}
+    <form class="card bodyform" id="bodyform">
+      <b>${t ? "Misure di oggi (puoi correggerle)" : "Nuove misure di oggi"}</b>
+      <p class="note" style="font-size:12.5px;margin:0">Compila solo quello che hai misurato: il resto lo tengo dalle volte prima.</p>
+      <div class="two">
+        ${fld("kg", "Peso", "kg", t?.kg, lastOf("kg") || "80")}
+        ${fld("height", "Altezza", "cm", hgt, "178")}
+      </div>
+      <span class="label" style="margin-top:4px">Circonferenze</span>
+      <div class="two">${MEAS.map(m => fld(m.k, m.l, "cm", t ? mval(t, m.k) : null, lastOf(m.k))).join("")}
+        ${fld("fat", "Massa grassa", "%", t?.fat, lastOf("fat"))}</div>
+      <button class="cta" style="height:50px;font-size:19px">Salva misure</button>
+      <p class="note" style="font-size:12.5px">Misura la mattina, a digiuno, col metro morbido senza stringere. Vita all'ombelico, fianchi nel punto più largo dei glutei, braccio a metà contratto, coscia a metà, sempre dallo stesso lato. Basta una volta ogni 2–4 settimane.</p>
+    </form>
+    <p class="note">In ricomposizione è normale che il peso resti quasi fermo: conta che vita e fianchi scendano mentre braccia, petto e carichi salgono.</p>
+    ${b.length ? `<div class="card list">${[...b].reverse().slice(0, 10).map(x => { const n = MEAS.filter(m => mval(x, m.k) != null).length;
+      return `<div class="it"><b style="font-weight:500">${fdate(x.date, {weekday:"short", day:"numeric", month:"short"})}</b><span>${x.kg ? kg(x.kg) + " kg" : ""}${n ? (x.kg ? " · " : "") + n + (n === 1 ? " misura" : " misure") : ""} <button class="link dim" style="height:32px;font-size:12.5px" data-bdel="${esc(x.id)}">Elimina</button></span></div>`; }).join("")}</div>` : ""}`;
 }
 
 function progStorico(){
@@ -865,7 +931,8 @@ function loadExample(){
       exercises: p.ex.map(e => ({ name: e.n, sets: Array.from({length:e.s}, () => ({ kg: startKg(e) ? r(startKg(e)) : 0, reps: parseInt(e.r) || 12 })) })) });
   });
   for (let w = 0; w < 7; w++) { const d = new Date(start); d.setDate(start.getDate() + w * 7 - 1); d.setHours(8, 0, 0, 0);
-    S.body.push({ id: "eb" + w, example: true, date: d.toISOString(), kg: +(80.4 - 0.12 * w).toFixed(1), waist: +(88 - 0.45 * w).toFixed(1) }); }
+    S.body.push({ id: "eb" + w, example: true, date: d.toISOString(), kg: +(80.4 - 0.12 * w).toFixed(1), waist: +(88 - 0.45 * w).toFixed(1), fat: +(19 - 0.3 * w).toFixed(1),
+      m: w % 2 ? {} : { collo: 39, spalle: +(118 + 0.4 * w).toFixed(1), petto: +(102 + 0.3 * w).toFixed(1), braccio: +(36 + 0.15 * w).toFixed(1), avambraccio: 30, fianchi: +(100 - 0.35 * w).toFixed(1), coscia: +(58 + 0.2 * w).toFixed(1), polpaccio: 38 } }); }
   if (!S.places.some(pl => pl.id === "ep1")) S.places.push({ id: "ep1", example: true, name: "Palestra (esempio)", lat: 45.001, lon: 9.002 });
   saveHistory(); saveBody(); savePlaces(); render(); toast("Dati di esempio caricati");
 }
@@ -1047,7 +1114,7 @@ function finish(btn){
 }
 
 async function exportData(){
-  const data = JSON.stringify({ app: "diario-forza", version: 2, exported: new Date().toISOString(), history: S.history.filter(h => !h.example), body: S.body.filter(b => !b.example), places: S.places.filter(pl => !pl.example) }, null, 1);
+  const data = JSON.stringify({ app: "diario-forza", version: 2, exported: new Date().toISOString(), history: S.history.filter(h => !h.example), height: S.height, body: S.body.filter(b => !b.example), places: S.places.filter(pl => !pl.example) }, null, 1);
   const name = "diario-forza-" + new Date().toISOString().slice(0, 10) + ".json";
   const file = new File([data], name, { type: "application/json" });
   const done = () => { store.set("lastBackup", new Date().toISOString()); if (S.view === "prog") renderProg(); };
@@ -1072,7 +1139,8 @@ $("#import-file").addEventListener("change", async e => {
     const ids = new Set(S.history.map(h => h.id)); let added = 0;
     for (const h of d.history) if (h && h.id && h.day && h.date && Array.isArray(h.exercises) && !ids.has(h.id)) { S.history.push(h); added++; }
     const bids = new Set(S.body.map(b => b.id));
-    for (const b of d.body || []) if (b && b.id && b.date && typeof b.kg === "number" && !bids.has(b.id)) { S.body.push(b); added++; }
+    for (const b of d.body || []) if (b && b.id && b.date && (typeof b.kg === "number" || b.m || typeof b.waist === "number") && !bids.has(b.id)) { S.body.push(b); added++; }
+    if (!S.height && typeof d.height === "number") { S.height = d.height; store.set("height", d.height); }
     const pids = new Set(S.places.map(pl => pl.id));
     for (const pl of d.places || []) if (pl && pl.id && pl.name && typeof pl.lat === "number" && !pids.has(pl.id)) S.places.push(pl);
     saveHistory(); saveBody(); savePlaces(); render(); toast(added ? `Importati ${added} allenamenti` : "Niente di nuovo da importare");
@@ -1081,6 +1149,8 @@ $("#import-file").addEventListener("change", async e => {
 
 document.addEventListener("click", e => {
   unlockAudio();
+  const mg = e.target.closest("[data-meas]");
+  if (mg) { S.meas = mg.dataset.meas; return renderProg(); }
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.go) return go(b.dataset.go);
   if (b.dataset.info) return openInfo(b.dataset.info);
@@ -1140,12 +1210,24 @@ document.addEventListener("submit", e => {
   }
   if (e.target.id !== "bodyform") return;
   e.preventDefault();
-  const w = num($("#b-kg").value), waist = num($("#b-waist").value);
-  if (w == null || w < 30 || w > 300) return toast("Scrivi il peso in kg, per esempio 79,5");
+  const val = id => num($("#b-" + id).value);
+  const w = val("kg"), h = val("height"), fat = val("fat");
+  if (w != null && (w < 30 || w > 300)) return toast("Scrivi il peso in kg, per esempio 79,5");
+  if (h != null && (h < 120 || h > 230)) return toast("Scrivi l'altezza in cm, per esempio 178");
+  if (fat != null && (fat < 3 || fat > 60)) return toast("La massa grassa va in %, per esempio 18");
+  const m = {}; let bad = null;
+  MEAS.forEach(x => { const v = val(x.k); if (v == null) return; if (v < 15 || v > 200) bad = x.l; else m[x.k] = v; });
+  if (bad) return toast(`${bad}: scrivi i centimetri, per esempio 38,5`);
+  if (h != null) { S.height = h; store.set("height", h); }
+  const { waist, ...rest } = m, any = w != null || fat != null || Object.keys(m).length;
+  if (!any) { renderProg(); return toast(h != null ? "Altezza salvata" : "Scrivi almeno una misura"); }
   const today = new Date().toISOString().slice(0, 10), t = S.body.find(x => x.date.slice(0, 10) === today && !x.example);
-  if (t) { t.kg = w; t.waist = waist; } else S.body.push({ id: "b" + Date.now(), date: new Date().toISOString(), kg: w, waist });
+  const en = t || { id: "b" + Date.now(), date: new Date().toISOString() };
+  en.kg = w ?? undefined; en.waist = waist ?? undefined; en.fat = fat ?? undefined; en.m = rest;
+  if (!t) S.body.push(en);
   saveBody(); renderProg(); toast("Misure salvate");
 });
+document.addEventListener("keydown", e => { const g = e.target.closest && e.target.closest("g[data-meas]"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); S.meas = g.dataset.meas; renderProg(); } });
 document.addEventListener("focusin", e => { if (e.target.matches(".sg input")) e.target.select(); });
 
 // Un allenamento lasciato a metà con la scheda vecchia non si può riprendere.
