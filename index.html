@@ -274,48 +274,91 @@ body.no-tabs .tabbar{display:none}
 <input type="file" id="import-file" accept="application/json,.json" hidden>
 
 <script>
-// Scheda "Riccio Samuele 13-05-23.xlsb", settimana 1. last = pesi registrati nella scheda.
-const SHEET_DATE = "2023-05-13";
-const PLAN = [
- {id:"g1", short:"Gambe", title:"Gambe · Braccia", color:"var(--red)", ex:[
-  {d:"Quad", n:"Squat", s:4, r:"6", rest:120, restL:"2′", rir:"1-2", int:"@75kg", last:[[80,6],[90,6],[100,6],[100,6]]},
-  {d:"Quad", n:"Squat Bulgaro", s:3, r:"12", rest:60, restL:"1′", rir:"0", int:"RPE 10", note:"Cedimento in tutte le serie", last:[[20,24],[20,24],[20,24]]},
-  {d:"Femorali", n:"Affondi camminati", s:2, r:"15", rest:60, restL:"1′", rir:"0-1", int:"RPE 9-10", note:"15 passi per lato", last:[[20,30],[20,30]]},
-  {d:"Tricipiti", n:"Push-Up", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"A", last:[[25,15],[25,15],[25,15]]},
-  {d:"Bicipiti", n:"EZ-Bar Curl", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"B", last:[[18,15],[18,15],[18,15]]}
+// Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
+// w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
+const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
+const DAYS = [
+ {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
+  {d:"Quadricipiti", n:"Squat", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Panca piana", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Quadricipiti", n:"Pendolum squat", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Deltoidi", n:"Military Press", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Addome", n:"Lavoro Sul core a piacere", bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Petto", n:"Croci cavi alti", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Alzate laterali a stella", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
- {id:"g2", short:"Dorso", title:"Dorso · Spalle · Braccia", color:"var(--blue)", ex:[
-  {d:"Dorso", n:"Stacco da terra", s:5, r:"5", rest:120, restL:"2′", rir:"1-3", int:"@110kg", last:[[100,6],[110,5],[120,5],[130,6],[135,6]]},
-  {d:"Dorso", n:"Rematore Bilanciere", s:6, r:"6", rest:90, restL:"1′30″", rir:"1-2", int:"@8RM", last:[[70,6],[75,6],[80,6],[83,6],[85,6],[85,6]]},
-  {d:"Dorso", n:"Pulley basso", s:3, r:"10-12", rest:60, restL:"1′", rir:"0-2", int:"RPE 9-10", last:[[67,12],[67,12],[67,12]]},
-  {d:"Deltoidi", n:"Alzate laterali", s:4, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"A", last:[[20,15],[20,15],[20,15]]},
-  {d:"Bicipiti", n:"Curl manubri panca 45°", s:4, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"B", last:[[20,10],[20,10],[20,10]]}
+ {id:"B", short:"Tirata", title:"Tirata · Forza", color:"var(--blue)", ex:[
+  {d:"Femorali", n:"Stacco da terra", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Row T-Bar", w:[["5", "5", "Q.B.", "1-2", "@80%"], ["6", "4", "Q.B.", "1-2", "@82,5%"], ["8", "3", "Q.B.", "1-2", "@85%"], ["6", "4", "Q.B.", "1-2", "@85%"], ["5", "5", "Q.B.", "1-2", "@85%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Machine avanti larga", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Triangolo", w:[["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "6-8", "1'-2'", "0-2", "@75%"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Addome", n:"Lavoro Sul core a piacere", bw:true, w:[["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["1", "10'", "30\"/1'", "0-1", "@BW", "Alternare esercizi con sovraccarico e non"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Petto", n:"Croci cavi alti", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Alzate laterali a stella", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
- {id:"g3", short:"Petto", title:"Petto · Spalle · Braccia", color:"var(--yellow)", ex:[
-  {d:"Petto", n:"Panca piana", s:5, r:"5", rest:120, restL:"2′", rir:"1-2", int:"@70kg", last:[[75,5],[80,5],[83,5],[85,5],[88,5]]},
-  {d:"Petto", n:"Panca inclinata Bilanciere", s:3, r:"8", rest:105, restL:"1′30″–2′", rir:"0-2", int:"@10RM", last:[[60,8],[50,8],[55,8]]},
-  {d:"Petto", n:"Spinte con manubri panca piana", s:3, r:"10-12", rest:90, restL:"1′30″", rir:"0-1", int:"RPE 9-10", last:[[56,12],[56,12],[56,12]]},
-  {d:"Deltoidi", n:"Alzate laterali", s:4, r:"10", rest:90, restL:"1′30″", rir:"0-2", int:"@12RM", last:[[20,10],[20,10],[20,10],[20,10]]},
-  {d:"Tricipiti", n:"Machine Dips", s:3, r:"max", rest:40, restL:"40″", rir:"0", int:"RPE 10", last:[[65,15],[75,15],[75,13]]},
-  {d:"Tricipiti", n:"Push up stretto", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", bw:true, last:[[0,10],[0,10],[0,9]]}
+ {id:"C", short:"Sp+Tir", title:"Spinta · Tirata · Ipertrofia", color:"var(--yellow)", ex:[
+  {d:"Petto", n:"Panca Piana Presa Larga", w:[["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["4", "6", "1'-2'", "1-3", "@75%", "Fermo 2\" al petto"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Spinte panca 30°", w:[["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["3", "10", "1'", "0-2", "@12RM", "Estensione massima pettorale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Croci cavi bassi", w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat machine avanti", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Dorso", n:"Pulley basso", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"Push Down Corda", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Curl manubri", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
- {id:"g4", short:"Gambe", title:"Gambe · Braccia", color:"var(--green)", ex:[
-  {d:"Quad", n:"Squat", s:4, r:"8", rest:120, restL:"2′", rir:"1-2", int:"@70kg", last:[[80,8],[90,8],[90,8],[90,8]]},
-  {d:"Quad", n:"Machine Hack Squat", s:3, r:"10", rest:60, restL:"1′", rir:"0-2", int:"RPE 8-9", last:[[100,10],[100,10],[100,10]]},
-  {d:"Femorali", n:"Leg Curl", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", last:[[65,12],[65,12],[65,12]]},
-  {d:"Quad", n:"Leg Extension", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", last:[[60,12],[60,12],[60,12]]},
-  {d:"Bicipiti", n:"Cable Curl", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"A", note:"Superserie alla corda", last:[[21,12],[21,12],[21,12]]},
-  {d:"Tricipiti", n:"Estensioni dietro testa", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", ss:"B", note:"Superserie alla corda", last:[[20,10],[20,10],[20,10]]}
+ {id:"D", short:"Gambe", title:"Gambe · Spalle · Braccia", color:"var(--green)", ex:[
+  {d:"Quadricipiti", n:"Squat", w:[["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["4", "6", "1'-2'", "1-3", "@75%", "Discesa lenta 3\" circa 2\" fermo in buca"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Femorali", n:"Pressa 45°", w:[["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["3", "10", "1'-2'", "0-1", "@12RM", "+isometria 30\" iniziale"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Femorali", n:"Squat Bulgaro", w:[["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["2", "max", "1'", "0-1", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Deltoidi", n:"Alzate laterali", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"French press manubri", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Hammer Curl", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]},
- {id:"g5", short:"Dorso", title:"Dorso · Petto", color:"var(--white)", ex:[
-  {d:"Dorso", n:"Lat Machine Avanti", s:4, r:"8", rest:120, restL:"2′", rir:"0-2", int:"@10RM", last:[[60,8],[62,8],[62,8],[62,8]]},
-  {d:"Dorso", n:"Rematore Bilanciere", s:3, r:"10-12", rest:60, restL:"1′", rir:"0-1", int:"RPE 9-10", last:[[70,12],[70,12],[70,12]]},
-  {d:"Dorso", n:"Pull down corda", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", last:[[26,12],[16,13],[26,15]]},
-  {d:"Petto", n:"Panca piana", s:4, r:"6", rest:120, restL:"2′", rir:"0", int:"@65kg", last:[[70,8],[73,8],[75,8],[80,8]]},
-  {d:"Petto", n:"Croci Panca piana", s:3, r:"max", rest:60, restL:"1′", rir:"0", int:"RPE 10", last:[[18,10],[18,15],[18,15]]}
+ {id:"E", short:"Tir+Sp", title:"Tirata · Spinta · Ipertrofia", color:"var(--white)", ex:[
+  {d:"Dorso", n:"T_Bar Row Presa Larga", w:[["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["4", "6", "1'-2'", "1-3", "@75%"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Lat Triangolo", w:[["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["3", "10", "1'", "0-2", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Dorso", n:"Pulldown alla corda", w:[["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["2", "max", "30\"-1'", "0", "@12RM"], ["5", "5", "1'-2'", "1-2", "@80%", "Quando chiudo lo schema alzo il carico"]]},
+  {d:"Petto", n:"Panca inclinata con bilanciere", w:[["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["4", "10", "1'", "0-2", "@12RM"], ["3", "12", "1'", "0-1", "@12RM", "Superslow"]]},
+  {d:"Petto", n:"Croci panca piana", w:[["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "max", "1'", "0", "@12RM"], ["3", "12", "1'", "0-1", "@12RM"]]},
+  {d:"Tricipiti", n:"Push Down Corda", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Bicipiti", n:"Curl Panca 45°", w:[["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@12/15RM"], ["2-3", "max", "30\"-1'", "0", "@BW", "Cedimento tutte"]]},
+  {d:"Deltoidi", n:"Croci Busto 90°", w:[null, null, null, null, null, ["2-3", "max", "30\"-1'", "0", "@12RM", "Cedimento tutte"]]},
+  {d:"Tricipiti", n:"Parte a piacere", w:[null, null, null, null, null, ["3", "max", "40\"", "0", "Rpe 10"]]}
  ]}
 ];
-const LIFTS = ["Stacco da terra", "Squat", "Panca piana", "Rematore Bilanciere"];
+const LIFTS = ["Squat", "Panca piana", "Stacco da terra", "Row T-Bar"];
+// Scheda precedente (13/05/23): la serie migliore di ogni esercizio resta come punto di partenza nei progressi.
+const BASE_DATE = "2023-05-13";
+const BASE = {
+  "Squat": [[80,6],[90,6],[100,6],[100,6]],
+  "Panca piana": [[75,5],[80,5],[83,5],[85,5],[88,5]],
+  "Stacco da terra": [[100,6],[110,5],[120,5],[130,6],[135,6]],
+  "Squat Bulgaro": [[20,24],[20,24],[20,24]],
+  "Pulley basso": [[67,12],[67,12],[67,12]],
+  "Alzate laterali": [[20,15],[20,15],[20,15]],
+  "Lat machine avanti": [[60,8],[62,8],[62,8],[62,8]],
+  "Panca inclinata con bilanciere": [[60,8],[50,8],[55,8]],
+  "Pulldown alla corda": [[26,12],[16,13],[26,15]],
+  "Croci panca piana": [[18,10],[18,15],[18,15]],
+  "Curl Panca 45°": [[20,10],[20,10],[20,10]]
+};
+// Stessi esercizi scritti in modo diverso nella scheda vecchia.
+const ALIAS = { "Lat Machine Avanti": "Lat machine avanti", "Croci Panca piana": "Croci panca piana", "Panca inclinata Bilanciere": "Panca inclinata con bilanciere", "Pull down corda": "Pulldown alla corda", "Curl manubri panca 45°": "Curl Panca 45°" };
+const canon = n => ALIAS[n] || n;
+// Giorni della scheda vecchia, per mostrare gli allenamenti già salvati.
+const OLD_DAYS = [
+  {id:"g1", title:"Gambe · Braccia", color:"var(--red)"}, {id:"g2", title:"Dorso · Spalle · Braccia", color:"var(--blue)"},
+  {id:"g3", title:"Petto · Spalle · Braccia", color:"var(--yellow)"}, {id:"g4", title:"Gambe · Braccia", color:"var(--green)"},
+  {id:"g5", title:"Dorso · Petto", color:"var(--white)"}
+];
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -323,8 +366,23 @@ const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); retu
 const kg = n => (Math.round(n * 10) / 10).toLocaleString("it-IT");
 const tons = n => (n / 1000).toLocaleString("it-IT", {maximumFractionDigits:1});
 const e1rm = (w, r) => w > 0 && r > 0 ? w * (1 + r / 30) : 0;
-const dayOf = id => PLAN.find(p => p.id === id);
-const dayNo = id => PLAN.findIndex(p => p.id === id) + 1;
+const pretty = s => s.replace(/'/g, "′").replace(/"/g, "″").replace(/-/g, "–");
+const REST = { "Q.B.": 180, "1'-2'": 90, "1'": 60, "30\"-1'": 45, "30\"/1'": 45, "40\"": 40 };
+// Il giorno con serie, ripetizioni e recuperi della settimana w (1–6). "2-3" serie: se ne preparano 3.
+const dayCache = {};
+function dayOf(id, w){
+  const k = id + w; if (dayCache[k]) return dayCache[k];
+  const d = DAYS.find(x => x.id === id); if (!d) return null;
+  return dayCache[k] = { ...d, week: w, ex: d.ex.flatMap(e => {
+    const v = e.w[w - 1]; if (!v) return [];
+    const [sl, r, rest, rir, int, note] = v;
+    return [{ d: e.d, n: e.n, bw: e.bw, sl, s: Math.max(...sl.split("-").map(Number)), smin: Math.min(...sl.split("-").map(Number)), r: pretty(r), rest: REST[rest] ?? 60, restL: rest === "Q.B." ? "Q.B." : pretty(rest), rir, int, note }];
+  }) };
+}
+const dayMeta = id => DAYS.find(x => x.id === id) || OLD_DAYS.find(x => x.id === id) || { id, title: "Allenamento", color: "var(--muted)" };
+// "A · S2" per la scheda nuova, "G3" per gli allenamenti della scheda vecchia.
+function dayTag(h){ const o = OLD_DAYS.findIndex(x => x.id === h.day); return o >= 0 ? "G" + (o + 1) : h.day + (h.week ? " · S" + h.week : ""); }
+const activeDay = () => dayOf(S.active.day, S.active.week);
 const PIN = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
 const CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -341,8 +399,9 @@ const S = {
   rest: store.get("rest", null),       // {end,total,label}
   body: store.get("body", []),         // misure: {id,date,kg,waist}, dalla più vecchia
   pick: null,                           // giorno scelto in Oggi
+  wpick: null,                          // settimana scelta in Oggi (altrimenti quella in corso)
   ptab: store.get("ptab", "forza"),     // scheda aperta in Progressi
-  pex: "Stacco da terra",               // esercizio nel grafico
+  pex: "Squat",                         // esercizio nel grafico
   places: store.get("places", []),      // luoghi con nome: {id,name,lat,lon}
   gps: store.get("gps", true),          // registra la posizione all'inizio
   pfilter: "all",                       // filtro luogo nello Storico
@@ -354,94 +413,109 @@ const saveBody = () => { S.body.sort((a, b) => a.date.localeCompare(b.date)); st
 const saveActive = () => store.set("active", S.active);
 
 // ---- Dati derivati ----
-function nextDay(){
-  if (!S.history.length) return "g1";
-  const i = PLAN.findIndex(p => p.id === S.history[0].day);
-  return PLAN[(i + 1) % PLAN.length].id;
+// Allenamenti veri fatti con questa scheda (gli esempi non contano).
+const onPlan = h => h.plan === PLAN_ID && !h.example;
+const doneIn = w => new Set(S.history.filter(h => onPlan(h) && h.week === w).map(h => h.day));
+// Settimana in corso: quella dell'ultimo allenamento, o la successiva quando i 5 giorni sono fatti.
+function autoWeek(){
+  const h = S.history.find(onPlan); if (!h) return 1;
+  return doneIn(h.week).size >= DAYS.length && h.week < WEEKS ? h.week + 1 : h.week;
 }
-function weekDone(){
-  const now = new Date(), mon = new Date(now); mon.setHours(0,0,0,0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
-  return new Set(S.history.filter(h => new Date(h.date) >= mon).map(h => h.day));
-}
+const curWeek = () => S.wpick || autoWeek();
+function nextDay(w = curWeek()){ const d = doneIn(w); return (DAYS.find(x => !d.has(x.id)) || DAYS[0]).id; }
+// Le ultime serie dell'esercizio: prima nello stesso giorno, poi in qualunque giorno, poi nella scheda 2023.
 function prevSets(dayId, name){
-  for (const h of S.history) {
-    if (h.day !== dayId) continue;
-    const e = h.exercises.find(x => x.name === name);
+  for (const same of [true, false]) for (const h of S.history) {
+    if (same && h.day !== dayId) continue;
+    const e = h.exercises.find(x => canon(x.name) === name);
     if (e && e.sets.length) return { sets: e.sets.map(s => [s.kg, s.reps]), date: h.date };
   }
-  const ex = dayOf(dayId).ex.find(x => x.n === name);
-  return { sets: ex.last, date: SHEET_DATE };
+  return BASE[name] ? { sets: BASE[name], date: BASE_DATE } : { sets: [], date: null };
 }
 function tonnage(sets){ return sets.reduce((a, [w, r]) => a + (w || 0) * (r || 0), 0); }
 function lastTonnage(dayId){
-  const h = S.history.find(x => x.day === dayId);
-  if (h) return { t: h.exercises.reduce((a, e) => a + tonnage(e.sets.map(s => [s.kg, s.reps])), 0), date: h.date };
-  return { t: dayOf(dayId).ex.reduce((a, e) => a + tonnage(e.last), 0), date: SHEET_DATE };
+  const h = S.history.find(x => x.plan === PLAN_ID && x.day === dayId);
+  return h ? { t: sessTon(h), date: h.date } : { t: 0, date: null };
 }
-const setCount = (ei) => dayOf(S.active.day).ex[ei].s + (S.active.extra[ei] || 0);
+// Carico indicativo per le percentuali: % del massimale stimato dalle tue serie migliori.
+function pctKg(ex){
+  const m = /@(\d+(?:,\d+)?)%/.exec(ex.int); if (!m) return null;
+  const pts = seriesFor(ex.n); if (!pts.length) return null;
+  const best = Math.max(...pts.map(p => p.v));
+  return Math.round(best * parseFloat(m[1].replace(",", ".")) / 100 / 2.5) * 2.5;
+}
+// Valori proposti per la serie si: le serie dell'ultima volta; se non ci sono (o sono del 2023), l'obiettivo della scheda.
+function suggest(ex, prev, si){
+  const ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [];
+  if (prev.date && prev.date !== BASE_DATE) return ph;
+  const r = parseInt(ex.r);
+  return [pctKg(ex) ?? ph[0], isFinite(r) && !/′/.test(ex.r) ? r : ph[1]];
+}
+const setCount = (ei) => activeDay().ex[ei].s + (S.active.extra[ei] || 0);
 function doneCount(ei){ let n = 0; for (let si = 0; si < setCount(ei); si++) if (S.active.sets[ei + "-" + si]?.done) n++; return n; }
 function totals(){
-  const ex = dayOf(S.active.day).ex; let all = 0, done = 0;
+  const ex = activeDay().ex; let all = 0, done = 0;
   ex.forEach((_, ei) => { all += setCount(ei); done += doneCount(ei); });
   return { all, done };
 }
 
 // ---- Oggi ----
 function renderHome(){
-  const id = S.pick || (S.active ? S.active.day : nextDay()), p = dayOf(id), n = dayNo(id);
-  const sets = p.ex.reduce((a, e) => a + e.s, 0), lt = lastTonnage(id), wd = weekDone();
+  const w = S.active && !S.pick && !S.wpick ? S.active.week : curWeek();
+  const id = S.pick || (S.active && w === S.active.week ? S.active.day : nextDay(w)), p = dayOf(id, w);
+  const sets = p.ex.reduce((a, e) => a + e.s, 0), lt = lastTonnage(id), wd = doneIn(w), auto = autoWeek();
   const date = new Date().toLocaleDateString("it-IT", {weekday:"long", day:"numeric", month:"long"});
   const items = [];
   p.ex.forEach((e, i) => {
     if (e.ss === "B") return;
     if (e.ss === "A") { const b = p.ex[i + 1];
-      items.push(`<div class="it"><b>${esc(e.n)} + ${esc(b.n)}<span class="ss-tag">Superserie</span></b><span>${e.s}×${esc(e.r)}</span></div>`);
-    } else items.push(`<div class="it"><b>${esc(e.n)}</b><span>${e.s}×${esc(e.r)} · ${esc(e.int)}</span></div>`);
+      items.push(`<div class="it"><b>${esc(e.n)} + ${esc(b.n)}<span class="ss-tag">Superserie</span></b><span>${esc(e.sl)}×${esc(e.r)}</span></div>`);
+    } else items.push(`<div class="it"><b>${esc(e.n)}</b><span>${esc(e.sl)}×${esc(e.r)} · ${esc(e.int)}</span></div>`);
   });
   let resume = "";
-  if (S.active) { const t = totals(), ap = dayOf(S.active.day);
-    resume = `<div class="card resume"><div><div class="label">In corso</div><b>G${dayNo(ap.id)} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
-  const startLabel = S.active ? (S.active.day === id ? "Riprendi allenamento" : null) : "Inizia allenamento";
+  if (S.active) { const t = totals(), ap = activeDay();
+    resume = `<div class="card resume"><div><div class="label">In corso</div><b>${ap.id} · S${ap.week} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
+  const startLabel = S.active ? (S.active.day === id && S.active.week === w ? "Riprendi allenamento" : null) : "Inizia allenamento";
   $("#v-home").innerHTML = `
-    <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span class="pill">Scheda 13/05/23</span></div>
+    <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span class="pill">${PLAN_LABEL}</span></div>
     ${resume}
     <div style="display:flex;flex-direction:column;gap:4px">
-      <span class="eyebrow" style="color:${p.color}">Giorno ${n} di 5${!S.active && id === nextDay() ? " · tocca a te" : ""}</span>
+      <span class="eyebrow" style="color:${p.color}">Settimana ${w} di ${WEEKS} · Giorno ${p.id}${!S.active && w === auto && id === nextDay(auto) ? " · tocca a te" : ""}</span>
       <h1 class="big" style="font-size:52px">${p.title.split(" · ").map(esc).join("<br>")}</h1>
     </div>
     <div class="stats">
       <div class="card stat"><span class="num">${p.ex.length}</span><small>esercizi</small></div>
       <div class="card stat"><span class="num">${sets}</span><small>serie</small></div>
-      <div class="card stat"><span class="num">${tons(lt.t)}<span class="muted" style="font-size:16px"> t</span></span><small>${lt.date === SHEET_DATE ? "dalla scheda" : "ultima volta"}</small></div>
+      <div class="card stat"><span class="num">${lt.date ? tons(lt.t) : "—"}${lt.date ? '<span class="muted" style="font-size:16px"> t</span>' : ""}</span><small>${lt.date ? "ultima volta" : "prima volta"}</small></div>
     </div>
     <div class="card list">${items.join("")}</div>
-    ${startLabel ? `<button class="cta" id="start" data-day="${id}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>${startLabel}</button>`
+    ${startLabel ? `<button class="cta" id="start" data-day="${id}" data-week="${w}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>${startLabel}</button>`
       : `<p class="note">Finisci prima l'allenamento in corso per iniziarne un altro.</p>`}
     <div style="display:flex;flex-direction:column;gap:10px">
-      <span class="label">La settimana</span>
-      <div class="week">${PLAN.map((d, i) => `<button class="wd${d.id === id ? " sel" : ""}${wd.has(d.id) ? " done" : ""}" data-pick="${d.id}" style="--pc:${d.color}" aria-pressed="${d.id === id}" aria-label="Giorno ${i + 1}, ${esc(d.title)}${wd.has(d.id) ? ", fatto questa settimana" : ""}"><span class="disc"><i></i>${CHECK}</span><small>G${i + 1} ${esc(d.short)}</small></button>`).join("")}</div>
+      <span class="label">Settimana ${w}</span>
+      <div class="week">${DAYS.map(d => `<button class="wd${d.id === id ? " sel" : ""}${wd.has(d.id) ? " done" : ""}" data-pick="${d.id}" style="--pc:${d.color}" aria-pressed="${d.id === id}" aria-label="Giorno ${d.id}, ${esc(d.title)}${wd.has(d.id) ? ", fatto" : ""}"><span class="disc"><i></i>${CHECK}</span><small>${d.id} ${esc(d.short)}</small></button>`).join("")}</div>
+      <div class="chips-f" role="group" aria-label="Settimana della scheda">${Array.from({length:WEEKS}, (_, i) => i + 1).map(k =>
+        `<button data-wk="${k}" aria-pressed="${k === w}">S${k}${doneIn(k).size >= DAYS.length ? " ✓" : k === auto ? " ·" : ""}</button>`).join("")}</div>
     </div>
     ${lastCard()}`;
 }
 // Riepilogo dell'ultimo allenamento: tonnellaggio rispetto alla volta prima dello stesso giorno e record battuti.
 function lastCard(){
   const h = S.history[0]; if (!h) return "";
-  const p = dayOf(h.day) || PLAN[0], t = sessTon(h), prs = prsIn(h);
+  const p = dayMeta(h.day), t = sessTon(h), prs = prsIn(h);
   const before = S.history.find(x => x !== h && x.day === h.day && x.date < h.date);
-  const base = before ? sessTon(before) : lastTonnageSheet(h.day);
   return `<button class="card last" data-go="prog" style="border:0;text-align:left;color:inherit;width:100%">
     <span class="label">Ultimo allenamento</span>
-    <div class="h"><i style="--pc:${p.color}"></i><b>G${dayNo(p.id)} · ${esc(p.title)}</b><span class="muted" style="font-size:12.5px">${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</span></div>
+    <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><span class="muted" style="font-size:12.5px">${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</span></div>
     <div class="where"><span>${CLOCK}${timeRange(h)}${h.minutes ? " · " + h.minutes + " min" : ""}</span>${h.loc ? `<span>${PIN}${esc(placeLabel(h.loc))}</span>` : ""}</div>
     <div class="kpis">
       <div><small>Sollevate</small><b>${tons(t)} t</b></div>
-      <div><small>${before ? "Vs volta prima" : "Vs scheda"}</small><b>${delta((t - base) / 1000, "t")}</b></div>
+      <div><small>Vs volta prima</small><b>${before ? delta((t - sessTon(before)) / 1000, "t") : '<span class="muted">prima volta</span>'}</b></div>
       <div><small>Record</small><b class="${prs.length ? "up" : ""}">${prs.length || "—"}</b></div>
     </div>
     ${prs.length ? `<span class="muted" style="font-size:12.5px">Nuovi record: ${prs.map(esc).join(", ")}</span>` : ""}
   </button>`;
 }
-function lastTonnageSheet(dayId){ return dayOf(dayId).ex.reduce((a, e) => a + tonnage(e.last), 0); }
 
 // ---- Allenamento ----
 function renderWork(){
@@ -451,18 +525,18 @@ function renderWork(){
       <div class="card empty"><span>Nessun allenamento in corso.</span><button class="cta" data-go="home" style="max-width:280px">Scegli il giorno</button></div>`;
     return;
   }
-  const A = S.active, p = dayOf(A.day), ei = A.idx, ex = p.ex[ei], t = totals();
-  const prev = prevSets(A.day, ex.n), n = setCount(ei);
+  const A = S.active, p = activeDay(), ei = A.idx, ex = p.ex[ei], t = totals();
+  const prev = prevSets(A.day, ex.n), n = setCount(ei), pk = pctKg(ex);
   let cur = -1; for (let si = 0; si < n; si++) if (!A.sets[ei + "-" + si]?.done) { cur = si; break; }
   const rows = Array.from({length:n}, (_, si) => {
-    const s = A.sets[ei + "-" + si] || {}, ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [];
+    const s = A.sets[ei + "-" + si] || {}, ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [], sg = suggest(ex, prev, si);
     const cls = s.done ? "done" : si === cur ? "cur" : "";
-    const phKg = ex.bw && !ph[0] ? "—" : (ph[0] ?? "");
+    const phKg = ex.bw && !sg[0] ? "—" : (sg[0] ?? "");
     return `<div class="sg ${cls}">
       <span class="n">${si + 1}</span>
       <span class="prev">${ph.length ? (ex.bw && !ph[0] ? "corpo" : kg(ph[0])) + " × " + ph[1] : "—"}</span>
-      <label><span class="sr">Kg serie ${si + 1}</span><input id="kg-${ei}-${si}" data-k="${ei}-${si}" data-f="kg" inputmode="decimal" enterkeyhint="next" placeholder="${phKg === "—" ? "—" : kg(phKg)}" value="${esc(s.kg ?? "")}"></label>
-      <label><span class="sr">Ripetizioni serie ${si + 1}</span><input id="rp-${ei}-${si}" data-k="${ei}-${si}" data-f="reps" inputmode="numeric" enterkeyhint="done" placeholder="${ph[1] ?? ""}" value="${esc(s.reps ?? "")}"></label>
+      <label><span class="sr">Kg serie ${si + 1}</span><input id="kg-${ei}-${si}" data-k="${ei}-${si}" data-f="kg" inputmode="decimal" enterkeyhint="next" placeholder="${phKg === "—" || phKg === "" ? phKg : kg(phKg)}" value="${esc(s.kg ?? "")}"></label>
+      <label><span class="sr">Ripetizioni serie ${si + 1}</span><input id="rp-${ei}-${si}" data-k="${ei}-${si}" data-f="reps" inputmode="numeric" enterkeyhint="done" placeholder="${sg[1] ?? ""}" value="${esc(s.reps ?? "")}"></label>
       <button class="tick" data-tick="${ei}-${si}" aria-pressed="${!!s.done}" aria-label="Serie ${si + 1} ${s.done ? "fatta, tocca per annullare" : "fatta"}">${CHECK}</button>
     </div>`;
   }).join("");
@@ -471,27 +545,27 @@ function renderWork(){
   el.innerHTML = `
     <div class="w-top">
       <button class="icon-btn" data-go="home" aria-label="Torna a Oggi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="info"><span class="eyebrow" style="color:${p.color};font-size:12px">G${dayNo(p.id)} · ${esc(p.title)}</span><span><span id="elapsed">0:00</span> · ${t.done} di ${t.all} serie${A.loc ? " · " + esc(placeLabel(A.loc)) : ""}</span></div>
+      <div class="info"><span class="eyebrow" style="color:${p.color};font-size:12px">${p.id} · S${p.week} · ${esc(p.title)}</span><span><span id="elapsed">0:00</span> · ${t.done} di ${t.all} serie${A.loc ? " · " + esc(placeLabel(A.loc)) : ""}</span></div>
       <button class="finish" id="finish">${t.done ? "Termina" : "Esci"}</button>
     </div>
     <div class="bar" style="--pc:${p.color}"><i style="width:${t.all ? t.done / t.all * 100 : 0}%"></i></div>
     <div class="exnav">${nav}</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <h1 class="big" style="font-size:40px;line-height:.95">${esc(ex.n)}</h1>
-      <div class="chips"><span>${ex.s}×${esc(ex.r)}</span><span>rec ${ex.ss === "A" ? "dopo B" : esc(ex.ss === "B" ? p.ex[ei - 1].restL : ex.restL)}</span><span>RIR ${esc(ex.rir)}</span><span>${esc(ex.int)}</span>${ex.ss ? `<span class="ss">Superserie ${ex.ss}</span>` : ""}</div>
+      <div class="chips"><span>${esc(ex.sl)}×${esc(ex.r)}</span><span>rec ${ex.ss === "A" ? "dopo B" : esc(ex.ss === "B" ? p.ex[ei - 1].restL : ex.restL)}</span><span>RIR ${esc(ex.rir)}</span><span>${esc(ex.int)}${pk ? " ≈ " + kg(pk) + " kg" : ""}</span>${ex.ss ? `<span class="ss">Superserie ${ex.ss}</span>` : ""}</div>
       ${ex.note ? `<p class="note">${esc(ex.note)}</p>` : ""}
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
-      <div class="sg head"><span>Serie</span><span>${prev.date === SHEET_DATE ? "Scheda" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span></span></div>
+      <div class="sg head"><span>Serie</span><span>${prev.date === BASE_DATE ? "2023" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span></span></div>
       ${rows}
-      <div class="sets-act"><button class="link" data-extra="1">+ Aggiungi serie</button>${A.extra[ei] ? `<button class="link dim" data-extra="-1">− Togli serie</button>` : ""}</div>
+      <div class="sets-act"><button class="link" data-extra="1">+ Aggiungi serie</button>${n > ex.smin ? `<button class="link dim" data-extra="-1">− Togli serie</button>` : ""}</div>
     </div>
     <div class="card manual">
       <span class="label">Timer manuale</span>
       <div class="opts">${[[60,"1′"],[90,"1′30″"],[120,"2′"],[180,"3′"]].map(([s, l]) => `<button data-rest="${s}" aria-label="Recupero di ${l}">${l}</button>`).join("")}</div>
     </div>
-    ${nx ? `<button class="card next" data-ex="${ei + 1}"><span class="label">Dopo</span><b>${esc(nx.n)}</b><span>${nx.s}×${esc(nx.r)}</span></button>`
+    ${nx ? `<button class="card next" data-ex="${ei + 1}"><span class="label">Dopo</span><b>${esc(nx.n)}</b><span>${esc(nx.sl)}×${esc(nx.r)}</span></button>`
          : `<button class="card next" id="finish2"><span class="label">Fine</span><b>Ultimo esercizio</b><span>Termina e salva</span></button>`}`;
   tickElapsed();
 }
@@ -503,21 +577,17 @@ function tickElapsed(){
 }
 
 // ---- Progressi ----
-const EX_NAMES = [...new Set(PLAN.flatMap(p => p.ex.filter(e => !e.bw).map(e => e.n)))];
+const EX_NAMES = [...new Set(DAYS.flatMap(p => p.ex.filter(e => !e.bw && e.n !== "Parte a piacere").map(e => e.n)))];
 const fdate = (d, o = {day:"numeric", month:"short"}) => new Date(d).toLocaleDateString("it-IT", o);
 function sessTon(h){ return h.exercises.reduce((a, e) => a + tonnage(e.sets.map(s => [s.kg, s.reps])), 0); }
 function bestOf(sets){ let b = null; for (const s of sets) { const v = e1rm(s.kg, s.reps); if (v && (!b || v > b.v)) b = { v, w: s.kg, r: s.reps }; } return b; }
-function sheetBest(name){
-  let b = null;
-  PLAN.forEach(p => p.ex.forEach(e => { if (e.n !== name) return; const x = bestOf(e.last.map(([kg, reps]) => ({kg, reps}))); if (x && (!b || x.v > b.v)) b = x; }));
-  return b;
-}
-// Serie migliore per ogni allenamento, dalla scheda in poi (ordine cronologico).
+const sheetBest = name => BASE[name] ? bestOf(BASE[name].map(([kg, reps]) => ({kg, reps}))) : null;
+// Serie migliore per ogni allenamento, dalla scheda 2023 in poi (ordine cronologico).
 function seriesFor(name){
   const pts = [], sb = sheetBest(name);
-  if (sb) pts.push({ date: SHEET_DATE, ...sb, sheet: true });
+  if (sb) pts.push({ date: BASE_DATE, ...sb, sheet: true });
   [...S.history].reverse().forEach(h => {
-    const e = h.exercises.find(x => x.name === name); if (!e) return;
+    const e = h.exercises.find(x => canon(x.name) === name); if (!e) return;
     const b = bestOf(e.sets); if (b) pts.push({ date: h.date, ...b });
   });
   return pts;
@@ -528,10 +598,10 @@ function prsIn(h){
   const older = S.history.filter(x => x.date < h.date);
   return h.exercises.filter(e => {
     const b = bestOf(e.sets); if (!b) return false;
-    let prev = sheetBest(e.name)?.v || 0;
-    older.forEach(o => { const oe = o.exercises.find(x => x.name === e.name); const ob = oe && bestOf(oe.sets); if (ob && ob.v > prev) prev = ob.v; });
+    let prev = sheetBest(canon(e.name))?.v || 0;
+    older.forEach(o => { const oe = o.exercises.find(x => canon(x.name) === canon(e.name)); const ob = oe && bestOf(oe.sets); if (ob && ob.v > prev) prev = ob.v; });
     return b.v > prev + 0.01;
-  }).map(e => e.name);
+  }).map(e => canon(e.name));
 }
 // ---- Orari e luoghi ----
 const hm = d => new Date(d).toLocaleTimeString("it-IT", {hour:"2-digit", minute:"2-digit"});
@@ -576,28 +646,29 @@ function lineChart(pts, val, color, unit, label){
 const delta = (d, unit, good = 1) => `<span class="${!good || Math.abs(d) <= 0.05 ? "muted" : d * good > 0 ? "up" : "down"}">${d >= 0 ? "+" : "−"}${kg(Math.abs(Math.round(d * 10) / 10))} ${unit}</span>`;
 
 function progForza(){
-  const name = EX_NAMES.includes(S.pex) ? S.pex : "Stacco da terra";
+  const name = EX_NAMES.includes(S.pex) ? S.pex : "Squat";
   const pts = seriesFor(name), first = pts[0], last = pts[pts.length - 1];
   const lifts = LIFTS.map(n => { const s = seriesFor(n); return { n, base: s[0], cur: s[s.length - 1] }; });
   const lastPR = new Set(prsIn(S.history[0]));
   const recs = EX_NAMES.map(n => { const s = seriesFor(n).filter(p => !p.sheet); if (!s.length) return null;
     const best = s.reduce((a, p) => p.v > a.v ? p : a), heavy = s.reduce((a, p) => p.w > a.w ? p : a); return { n, best, heavy }; }).filter(Boolean);
   return `
-    <div class="lifts">${lifts.map(l => { const d = l.cur.v - l.base.v;
+    <div class="lifts">${lifts.map(l => { if (!l.cur) return `<button class="card lift" data-pex="${esc(l.n)}"><span class="t">${esc(l.n)}</span><span class="num">—</span><span class="s">dopo il primo allenamento</span></button>`;
+      const d = l.cur.v - l.base.v;
       return `<button class="card lift" data-pex="${esc(l.n)}"><span class="t">${esc(l.n)}</span>
         <span class="num">${Math.round(l.cur.v)}<small> kg</small></span>
-        <span class="s">${l.cur.sheet ? "dalla scheda" : `da ${kg(l.cur.w)} × ${l.cur.r} · ${delta(d, "kg")}`}</span></button>`; }).join("")}</div>
+        <span class="s">${l.cur.sheet ? "scheda 2023" : `da ${kg(l.cur.w)} × ${l.cur.r} · ${delta(d, "kg")}`}</span></button>`; }).join("")}</div>
     <div class="card chart">
       <div class="hd"><b>Andamento</b><span>1RM stimato</span></div>
       <label class="sel"><span class="sr">Esercizio</span><select id="pex">${EX_NAMES.map(n => `<option${n === name ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
-      ${lineChart(pts, p => p.v, "var(--red)", "kg", "1RM stimato " + name)}
+      ${pts.length ? `${lineChart(pts, p => p.v, "var(--red)", "kg", "1RM stimato " + name)}
       <div class="kpis">
         <div><small>Ora</small><b>${Math.round(last.v)} kg</b></div>
-        <div><small>Dalla scheda</small><b>${delta(last.v - first.v, "kg")}</b></div>
+        <div><small>${first.sheet ? "Dal 2023" : "Dall'inizio"}</small><b>${delta(last.v - first.v, "kg")}</b></div>
         <div><small>Serie migliore</small><b>${kg(last.w)} × ${last.r}</b></div>
-      </div>
+      </div>` : `<p class="note">Ancora nessuna serie salvata per questo esercizio.</p>`}
       ${pts.length > 1 ? `<div class="tbl"><div class="tr th"><span>Data</span><span>Serie migliore</span><span>1RM</span></div>${pts.slice(-6).reverse().map(p =>
-        `<div class="tr"><span>${p.sheet ? "Scheda 13/05/23" : fdate(p.date, {weekday:"short", day:"numeric", month:"short"})}</span><span>${kg(p.w)} × ${p.r}</span><span>${Math.round(p.v)}</span></div>`).join("")}</div>` : ""}
+        `<div class="tr"><span>${p.sheet ? "Scheda 2023" : fdate(p.date, {weekday:"short", day:"numeric", month:"short"})}</span><span>${kg(p.w)} × ${p.r}</span><span>${Math.round(p.v)}</span></div>`).join("")}</div>` : ""}
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Record personali</span>
@@ -611,7 +682,7 @@ function progVolume(){
   for (let i = 7; i >= 0; i--) { const s = new Date(thisMon); s.setDate(s.getDate() - 7 * i); weeks.push({ s, t: 0, n: 0 }); }
   S.history.forEach(h => { const m = monday(h.date).getTime(), w = weeks.find(x => x.s.getTime() === m); if (w) { w.t += sessTon(h); w.n++; } });
   const wmax = Math.max(...weeks.map(w => w.t)) || 1;
-  const days = PLAN.map(p => ({ p, ...lastTonnage(p.id) })), dmax = Math.max(...days.map(d => d.t)) || 1;
+  const days = DAYS.map(p => ({ p, ...lastTonnage(p.id) })), dmax = Math.max(...days.map(d => d.t)) || 1;
   const mins = S.history.filter(h => h.minutes).map(h => h.minutes);
   const avg = mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : null;
   return `
@@ -629,8 +700,8 @@ function progVolume(){
     <div class="card chart">
       <div class="hd"><b>Tonnellaggio per giorno</b><span>ultimo di ogni giorno · t</span></div>
       <div class="bars">${days.map(d => `<div><span>${tons(d.t)}</span><i style="--pc:${d.p.color};height:${Math.round(d.t / dmax * 130)}px"></i></div>`).join("")}</div>
-      <div class="bars-x">${days.map(d => `<span>G${dayNo(d.p.id)}${d.date === SHEET_DATE ? "*" : ""}</span>`).join("")}</div>
-      ${days.some(d => d.date === SHEET_DATE) ? `<p class="note" style="font-size:12px">* dalla scheda, non ancora allenato nell'app</p>` : ""}
+      <div class="bars-x">${days.map(d => `<span>${d.p.id}${d.date ? "" : "*"}</span>`).join("")}</div>
+      ${days.some(d => !d.date) ? `<p class="note" style="font-size:12px">* non ancora allenato con la scheda nuova</p>` : ""}
     </div>`;
 }
 
@@ -681,13 +752,13 @@ function progStorico(){
   const chips = used.length ? `<div class="chips-f">${[["all", "Tutti"], ...used.map(pl => [pl.id, pl.name]), ["none", "Senza nome"]].map(([k, l]) =>
     `<button data-pfilter="${esc(k)}" aria-pressed="${k === f}">${esc(l)}</button>`).join("")}</div>` : "";
   const hist = list.map(h => {
-    const p = dayOf(h.day) || PLAN[0], ns = h.exercises.reduce((a, e) => a + e.sets.length, 0), prs = prsIn(h), pl = placeFor(h.loc);
+    const p = dayMeta(h.day), ns = h.exercises.reduce((a, e) => a + e.sets.length, 0), prs = prsIn(h), pl = placeFor(h.loc);
     const where = !h.loc ? `<span class="muted">Posizione non registrata</span>`
       : pl ? `<span>${PIN}${esc(pl.name)}</span>`
       : S.naming === h.id ? `<form class="nameform" data-nameloc="${esc(h.id)}"><label class="sr" for="pn-${esc(h.id)}">Nome del luogo</label><input id="pn-${esc(h.id)}" placeholder="es. Palestra centro" maxlength="40" autocomplete="off"><button class="btn2">Salva</button></form>`
       : `<span>${PIN}Luogo senza nome · <button class="link" style="height:28px;font-size:13px" data-name="${esc(h.id)}">Dai un nome</button></span>`;
     return `<article class="card sess">
-      <div class="h"><i style="--pc:${p.color}"></i><b>G${dayNo(p.id)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
+      <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
       <div class="where"><span>${CLOCK}${timeRange(h)}</span>${where}</div>
       <div class="st"><span><b>${tons(sessTon(h))} t</b> sollevate</span><span><b>${ns}</b> serie</span>${h.minutes ? `<span><b>${h.minutes}</b> min</span>` : ""}${prs.length ? `<span class="up"><b class="up">${prs.length}</b> record</span>` : ""}</div>
       <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps).join("  ")}</span></li>`).join("")}</ul></details>
@@ -727,14 +798,17 @@ function renderProg(){
 function loadExample(){
   const now = new Date(), start = monday(now); start.setDate(start.getDate() - 7 * 6); start.setHours(18, 30, 0, 0);
   let n = 0;
-  for (let w = 0; w < 7; w++) PLAN.forEach((p, di) => {
+  // Carichi di partenza inventati: la serie migliore 2023, o un valore tipico per il distretto.
+  const KG = { Quadricipiti: 90, Femorali: 100, Dorso: 65, Petto: 60, Deltoidi: 14, Tricipiti: 25, Bicipiti: 14 };
+  const startKg = e => BASE[e.n] ? Math.max(...BASE[e.n].map(s => s[0])) : e.bw ? 0 : KG[e.d] || 20;
+  for (let w = 0; w < 7; w++) DAYS.forEach((d, di) => {
     const date = new Date(start); date.setDate(start.getDate() + w * 7 + [0, 1, 3, 4, 5][di]);
     if (date >= now) return;
-    const f = 1 + 0.018 * w, r = x => x < 30 ? Math.round(x * f) : Math.round(x * f / 2.5) * 2.5;
-    const mins = 44 + di * 3 + (w % 3) * 2, st = new Date(date.getTime() - mins * 60000), away = di === 4 && w % 2;
-    S.history.push({ id: "es" + n++, example: true, day: p.id, date: date.toISOString(), startedAt: st.toISOString(), minutes: mins,
+    const wk = Math.min(w + 1, WEEKS), p = dayOf(d.id, wk), f = 1 + 0.018 * w, r = x => x < 30 ? Math.round(x * f) : Math.round(x * f / 2.5) * 2.5;
+    const mins = 55 + di * 3 + (w % 3) * 2, st = new Date(date.getTime() - mins * 60000), away = di === 4 && w % 2;
+    S.history.push({ id: "es" + n++, example: true, plan: PLAN_ID, week: wk, day: d.id, date: date.toISOString(), startedAt: st.toISOString(), minutes: mins,
       loc: away ? { lat: 45.012, lon: 9.031, acc: 30 } : { lat: 45.001, lon: 9.002, acc: 25 },
-      exercises: p.ex.map(e => ({ name: e.n, sets: e.last.map(([w0, rp]) => ({ kg: w0 ? r(w0) : 0, reps: rp })) })) });
+      exercises: p.ex.map(e => ({ name: e.n, sets: Array.from({length:e.s}, () => ({ kg: startKg(e) ? r(startKg(e)) : 0, reps: parseInt(e.r) || 12 })) })) });
   });
   for (let w = 0; w < 7; w++) { const d = new Date(start); d.setDate(start.getDate() + w * 7 - 1); d.setHours(8, 0, 0, 0);
     S.body.push({ id: "eb" + w, example: true, date: d.toISOString(), kg: +(80.4 - 0.12 * w).toFixed(1), waist: +(88 - 0.45 * w).toFixed(1) }); }
@@ -800,8 +874,8 @@ async function keepAwake(){ try { if (S.active && !wake && navigator.wakeLock) {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { keepAwake(); paintRest(); } });
 
 // ---- Azioni ----
-function startWorkout(day){
-  S.active = { day, startedAt: new Date().toISOString(), idx: 0, sets: {}, extra: {}, loc: null };
+function startWorkout(day, week){
+  S.active = { day, week, startedAt: new Date().toISOString(), idx: 0, sets: {}, extra: {}, loc: null };
   saveActive(); keepAwake(); go("work");
   if (S.gps && navigator.geolocation) {
     try {
@@ -814,10 +888,10 @@ function startWorkout(day){
   }
 }
 function tick(ei, si){
-  const A = S.active, p = dayOf(A.day), ex = p.ex[ei], k = ei + "-" + si;
+  const A = S.active, p = activeDay(), ex = p.ex[ei], k = ei + "-" + si;
   const s = A.sets[k] ||= {};
   if (s.done) { s.done = false; saveActive(); renderWork(); return; }
-  const prev = prevSets(A.day, ex.n).sets, ph = prev[si] || prev[prev.length - 1] || [];
+  const ph = suggest(ex, prevSets(A.day, ex.n), si);
   if (num(s.kg) == null) s.kg = ph[0] ? String(ph[0]).replace(".", ",") : "";
   if (num(s.reps) == null) s.reps = ph[1] != null ? String(ph[1]) : "";
   s.done = true;
@@ -836,20 +910,20 @@ function finish(btn){
   const t = totals();
   if (Date.now() - finishArmed > 3500) { finishArmed = Date.now(); btn.classList.add("arm"); btn.textContent = t.done ? "Salvo? Tocca" : "Esco? Tocca"; setTimeout(() => { btn.classList.remove("arm"); btn.textContent = t.done ? "Termina" : "Esci"; }, 3500); return; }
   finishArmed = 0;
-  const A = S.active, p = dayOf(A.day);
+  const A = S.active, p = activeDay();
   if (t.done) {
     const exercises = p.ex.map((ex, ei) => ({ name: ex.n,
       sets: Array.from({length:setCount(ei)}, (_, si) => A.sets[ei + "-" + si]).filter(s => s && s.done).map(s => ({ kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0 })) }))
       .filter(e => e.sets.length);
     const now = new Date();
-    S.history.unshift({ id: "s" + now.getTime(), day: A.day, date: now.toISOString(), startedAt: A.startedAt, loc: A.loc || null, exercises,
+    S.history.unshift({ id: "s" + now.getTime(), plan: PLAN_ID, week: A.week, day: A.day, date: now.toISOString(), startedAt: A.startedAt, loc: A.loc || null, exercises,
       minutes: Math.max(1, Math.round((now - new Date(A.startedAt)) / 60000)) });
     saveHistory();
     const ton = exercises.reduce((a, e) => a + tonnage(e.sets.map(s => [s.kg, s.reps])), 0);
     const prs = prsIn(S.history[0]);
     toast(`Salvato: ${tons(ton)} t sollevate` + (prs.length ? ` · ${prs.length} ${prs.length === 1 ? "nuovo record" : "nuovi record"}!` : ""));
   }
-  S.active = null; saveActive(); stopRest();
+  S.active = null; S.wpick = null; S.pick = null; saveActive(); stopRest();
   try { wake && wake.release(); } catch {}
   go("home");
 }
@@ -892,12 +966,13 @@ document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.go) return go(b.dataset.go);
   if (b.dataset.pick) { S.pick = b.dataset.pick; return renderHome(); }
-  if (b.id === "start") { if (S.active) return go("work"); return startWorkout(b.dataset.day); }
+  if (b.id === "start") { if (S.active) return go("work"); return startWorkout(b.dataset.day, Number(b.dataset.week)); }
+  if (b.dataset.wk) { S.wpick = Number(b.dataset.wk); S.pick = null; return renderHome(); }
   if (b.dataset.tick) { const [ei, si] = b.dataset.tick.split("-").map(Number); return tick(ei, si); }
   if (b.dataset.ex) { S.active.idx = Number(b.dataset.ex); saveActive(); renderWork(); return window.scrollTo(0, 0); }
   if (b.dataset.extra) {
     const A = S.active, ei = A.idx, dir = Number(b.dataset.extra);
-    A.extra[ei] = Math.max(0, (A.extra[ei] || 0) + dir);
+    A.extra[ei] = Math.max(activeDay().ex[ei].smin - activeDay().ex[ei].s, (A.extra[ei] || 0) + dir);
     if (dir < 0) delete A.sets[ei + "-" + setCount(ei)];
     saveActive(); return renderWork();
   }
@@ -945,6 +1020,8 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("focusin", e => { if (e.target.matches(".sg input")) e.target.select(); });
 
+// Un allenamento lasciato a metà con la scheda vecchia non si può riprendere.
+if (S.active && !DAYS.some(d => d.id === S.active.day)) { S.active = null; saveActive(); }
 if (S.active) { S.view = "work"; keepAwake(); }
 render(); paintRest();
 // Chiede a iOS/Android di non cancellare i dati dell'app quando manca spazio.
