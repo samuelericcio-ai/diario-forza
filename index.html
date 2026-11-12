@@ -219,6 +219,15 @@ button.lift{border:0;text-align:left;color:inherit}
 .ico{width:14px;height:14px;flex:none}
 .nameform{display:flex;gap:8px;width:100%}
 .nameform input{flex:1;min-width:0;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:16px;padding:0 12px}
+.vid{display:flex;gap:12px;align-items:center;padding:10px;text-decoration:none;color:inherit}
+.vid .th{width:116px;aspect-ratio:16/9;border-radius:10px;background:var(--card2) center/cover no-repeat;flex:none;display:grid;place-items:center;color:var(--muted)}
+.vid b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
+.vid small{color:var(--muted);font-size:12.5px}
+.weeks6 .it.now b,.weeks6 .it.now span{color:var(--ink)}
+.weeks6 .it.now b::after{content:" · ora";color:var(--red);font-size:12px}
+.qbox{width:100%;height:50px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:17px;padding:0 16px}
+.chev{color:var(--faint);margin-left:6px}
+.list a.it{text-decoration:none}
 .chips-f{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
 .chips-f::-webkit-scrollbar{display:none}
 .chips-f button{flex:none;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:none;font-weight:600;font-size:13.5px;color:var(--muted)}
@@ -248,6 +257,7 @@ body.no-tabs .tabbar{display:none}
 <main class="screen" id="v-home"></main>
 <main class="screen" id="v-work" hidden></main>
 <main class="screen" id="v-prog" hidden></main>
+<main class="screen" id="v-info" hidden></main>
 
 <div class="rest" id="rest" hidden>
   <div class="in">
@@ -353,6 +363,39 @@ const BASE = {
 // Stessi esercizi scritti in modo diverso nella scheda vecchia.
 const ALIAS = { "Lat Machine Avanti": "Lat machine avanti", "Croci Panca piana": "Croci panca piana", "Panca inclinata Bilanciere": "Panca inclinata con bilanciere", "Pull down corda": "Pulldown alla corda", "Curl manubri panca 45°": "Curl Panca 45°" };
 const canon = n => ALIAS[n] || n;
+// Video scelti su YouTube per ogni esercizio: [id, titolo, canale, durata]. Le anteprime si vedono solo con internet.
+const VIDEOS = {
+  "Squat": [["kJQH55N3pjU", "Back squat: come eseguirlo correttamente", "Umberto Miletto", "3:03"], ["q4RiiXo5mgA", "Come imparare lo squat correttamente", "Project inVictus", "7:56"], ["tr5PgWEebNA", "Back squat: esecuzione e tecnica", "Invictus Club Torino", "0:32"]],
+  "Panca piana": [["kWrRwATrqpc", "Panca piana: esecuzione corretta", "Luigi Colbax - FIT OVER50", "2:04"], ["nclAIgM4NJE", "Panca piana: impariamo a farla bene", "Project inVictus", "4:42"], ["X20sHGRa56Y", "Panca piana: tecnica e consigli", "Umberto Miletto", "13:09"]],
+  "Pendolum squat": [["rxxT2eueMZg", "Guida al pendulum squat", "The Gym Club", "2:56"], ["Nmq-8AK-GJQ", "Squat con pendolo: come si fa", "BEN MIGHTY", "1:37"]],
+  "Military Press": [["e2Waz_LKmNQ", "Military press bilanciere: come farla", "Filippo d'Albero", "4:43"], ["yalBWM_YjSQ", "Military press: esecuzione corretta", "Luigi Colbax - FIT OVER50", "1:36"], ["K2qcToJDmXc", "Military press: esecuzione e tecnica", "Invictus Club Torino", "0:42"]],
+  "Lavoro Sul core a piacere": [["FP4X1C3a_qI", "8 esercizi per un core più forte", "Jason and Lauren", "13:18"], ["TRAJ5JrAsjU", "Core stability avanzato", "Fixfit - Fitness Lifestyle", "15:33"]],
+  "Croci cavi alti": [["Y124XcVASPc", "Croci ai cavi e gran pettorale", "Fitness Posturale", "5:04"], ["-kZ5A7aPiCw", "Croci ai cavi alti", "MT TRAINING", "0:13"], ["mtSf_KLrcrE", "Croci ai cavi alti", "Simone Cotrona", "0:35"]],
+  "Alzate laterali a stella": [["FDCwcG71Yi0", "Alzate laterali: tutorial", "Umberto Miletto", "1:46"], ["oRxA2dmql2k", "Alzate laterali: 3 errori da non fare", "Umberto Miletto", "4:07"]],
+  "Croci Busto 90°": [["DBh5rRbZGyU", "Alzate posteriori: come farle", "Project inVictus", "5:14"], ["oIdOSCJa6ek", "Alzate posteriori per i deltoidi", "Dieta Flessibile", "1:39"], ["HQPLVpe83w8", "Alzate a 90° per i deltoidi posteriori", "Antonio Notaro", "1:24"]],
+  "Parte a piacere": [["8Q_NO3ztcvw", "I 3 esercizi per i tricipiti", "GianzCoach", "10:12"], ["hx6NcaHD72A", "Come allenare i tricipiti", "Project inVictus", "8:27"]],
+  "Stacco da terra": [["b4NI-OkEnW0", "Stacco da terra in 2 minuti", "Luigi Colbax - FIT OVER50", "2:36"], ["d_KkA3UHOtk", "Stacco da terra: esecuzione ed errori", "Project inVictus", "7:26"], ["Eap8mXi6hBk", "Come fare lo stacco da terra", "DOMINGO POLIANDRI", "5:01"]],
+  "Row T-Bar": [["TyLoy3n_a10", "T-bar row: esecuzione corretta", "Colossus Fitness", "2:24"], ["JJkoBH0CDgM", "Rematore bilanciere o T-bar?", "Project inVictus", "10:11"]],
+  "Lat Machine avanti larga": [["zhCwrtIZaQk", "Lat machine: esecuzione in 2 minuti", "Luigi Colbax - FIT OVER50", "1:38"], ["NL6Lqd6nU-g", "Lat machine: tutto quello che c'è da sapere", "Project inVictus", "4:13"], ["FYTJqWcmM-w", "Lat machine: 4 errori da correggere", "GianzCoach", "7:49"]],
+  "Lat Triangolo": [["SZ1Yv4Q-aTI", "Lat machine con triangolo", "AIPT Accademia Italiana Personal Trainer", "0:50"], ["HKNHtj-zrCo", "Lat machine con triangolo", "Dott. Marco Marcellino Trainer", "0:46"]],
+  "Panca Piana Presa Larga": [["II-GYtbhJkk", "Tutorial fermo al petto", "AIF Accademia Italiana Forza", "1:57"], ["UBZ3X80y1tg", "Panca piana: fermo al petto sì o no?", "Alessio Ferlito - Project Strength Genova", "2:34"], ["kWrRwATrqpc", "Panca piana: esecuzione corretta", "Luigi Colbax - FIT OVER50", "2:04"]],
+  "Spinte panca 30°": [["-64oEC9FeE4", "Spinte manubri panca 30°", "Umberto Miletto", "2:39"], ["FnAYj-tj-NE", "Spinte manubri panca 30°: esecuzione", "Lorenzo Gabrielli Coaching", "6:56"], ["iKRv8OOtwAs", "Distensioni manubri panca inclinata", "Invictus Club Torino", "0:37"]],
+  "Croci cavi bassi": [["jzKDCuJVLjo", "Croci ai cavi bassi", "Dott. Marco Marcellino Trainer", "0:40"], ["e8w6MEDBYMw", "Croci ai cavi bassi nel modo corretto", "RinFORZAti", "2:00"]],
+  "Lat machine avanti": [["zhCwrtIZaQk", "Lat machine: esecuzione in 2 minuti", "Luigi Colbax - FIT OVER50", "1:38"], ["P8QKoy5sjv8", "Lat machine: tutorial", "Project inVictus", "8:01"], ["FYTJqWcmM-w", "Lat machine: 4 errori da correggere", "GianzCoach", "7:49"]],
+  "Pulley basso": [["qaR7MJw1AOY", "Pulley basso e schiena", "Project inVictus", "5:08"], ["fmCHxXLZXLU", "Pulley: esecuzione ed errori", "Luigi Colbax - FIT OVER50", "1:45"], ["hyzrjWUHq80", "5 errori comuni nel pulley", "GianzCoach", "13:59"]],
+  "Push Down Corda": [["z-GYsUm3f9c", "Push down: come eseguirlo", "Project inVictus", "4:21"], ["LjXZ9gDhegY", "Push down con corda", "Dott. Marco Marcellino Trainer", "0:31"], ["gQuAM7Wzp74", "Push down ai cavi: esecuzione", "Lorenzo Gabrielli Coaching", "4:41"]],
+  "Curl manubri": [["1Qp04kK-k6U", "Curl con manubri in piedi", "Umberto Miletto", "1:30"], ["5stgg5DH51k", "Bicipiti: 5 consigli pratici", "Project inVictus", "6:17"]],
+  "Pressa 45°": [["LMTyPl_oo38", "Leg press: esecuzione e varianti", "Project inVictus", "3:55"], ["mAweueISnMI", "Leg press: esecuzione perfetta", "Luigi Colbax - FIT OVER50", "5:48"], ["06hl2M5OjLI", "Leg press: 6 errori comuni", "GianzCoach", "11:19"]],
+  "Squat Bulgaro": [["X1DVx2_7Ka4", "Squat bulgaro: come si fa", "Umberto Miletto", "1:20"], ["QfUOjm2LmJk", "Bulgarian split squat: tutorial completo", "Filippo d'Albero", "8:39"]],
+  "Alzate laterali": [["FDCwcG71Yi0", "Alzate laterali: tutorial", "Umberto Miletto", "1:46"], ["oRxA2dmql2k", "Alzate laterali: 3 errori da non fare", "Umberto Miletto", "4:07"], ["9yg83KalYTo", "Alzate laterali: 5 errori", "GianzCoach", "9:29"]],
+  "French press manubri": [["moh_O_hHMFs", "French press: cosa devi sapere", "Project inVictus", "5:57"], ["v-7aP_2Song", "French press manubri su panca piana", "Body Revo", "3:32"]],
+  "Hammer Curl": [["R_Afr1mMRi8", "Curl hammer con manubri", "Umberto Miletto", "3:14"], ["yr9Qu1pcwgM", "Curl a martello per i bicipiti", "Project inVictus", "3:43"]],
+  "T_Bar Row Presa Larga": [["R50XgUCjvXA", "Rematore a T presa larga", "punchsupplements", "1:41"], ["TyLoy3n_a10", "T-bar row: esecuzione corretta", "Colossus Fitness", "2:24"]],
+  "Pulldown alla corda": [["Sdx3yTPaVpk", "Pull down con corda", "Unconventional Fit", "0:29"], ["2AhFDt4AU64", "Pulldown a braccia tese", "Lorenzo Serra - Fitness e Allenamento", "1:24"], ["IfgUF3RbutE", "Pull down: esecuzione corretta", "Project inVictus", "5:23"]],
+  "Panca inclinata con bilanciere": [["1qdWI0Z-Ymk", "Panca inclinata bilanciere: tutorial", "Umberto Miletto", "1:39"], ["KBog9sXe4I4", "Panca inclinata: esecuzione corretta", "Marco Gelmini Roots of Strength", "7:45"], ["qC-NmNrY9fk", "Panca inclinata per il petto alto", "Project inVictus", "6:56"]],
+  "Croci panca piana": [["ZfTV56NfsCY", "Croci con manubri: tutorial", "Umberto Miletto", "2:05"], ["E4fBCLKbldo", "Croci con manubri", "Project inVictus", "6:12"], ["xtm3lTnCcTg", "Croci manubri su panca piana", "Dott. Marco Marcellino Trainer", "0:46"]],
+  "Curl Panca 45°": [["0o5foceYAnA", "Curl panca inclinata: esecuzione ed errori", "Project inVictus", "5:17"], ["rr2meFMsgSY", "Curl manubri panca inclinata", "Dieta Flessibile", "1:51"]]
+};
 // Giorni della scheda vecchia, per mostrare gli allenamenti già salvati.
 const OLD_DAYS = [
   {id:"g1", title:"Gambe · Braccia", color:"var(--red)"}, {id:"g2", title:"Dorso · Spalle · Braccia", color:"var(--blue)"},
@@ -383,6 +426,7 @@ const dayMeta = id => DAYS.find(x => x.id === id) || OLD_DAYS.find(x => x.id ===
 // "A · S2" per la scheda nuova, "G3" per gli allenamenti della scheda vecchia.
 function dayTag(h){ const o = OLD_DAYS.findIndex(x => x.id === h.day); return o >= 0 ? "G" + (o + 1) : h.day + (h.week ? " · S" + h.week : ""); }
 const activeDay = () => dayOf(S.active.day, S.active.week);
+const SEARCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
 const PIN = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
 const CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -405,7 +449,11 @@ const S = {
   places: store.get("places", []),      // luoghi con nome: {id,name,lat,lon}
   gps: store.get("gps", true),          // registra la posizione all'inizio
   pfilter: "all",                       // filtro luogo nello Storico
-  naming: null                          // allenamento di cui si sta nominando il luogo
+  naming: null,                         // allenamento di cui si sta nominando il luogo
+  info: null,                           // esercizio aperto nella sua pagina (null = ricerca)
+  infoFrom: "home",                     // schermata a cui torna "Indietro"
+  fromSearch: false,                    // la pagina dell'esercizio è stata aperta dalla ricerca
+  q: ""                                 // testo cercato
 };
 const saveHistory = () => { S.history.sort((a, b) => b.date.localeCompare(a.date)); store.set("history", S.history); };
 const savePlaces = () => store.set("places", S.places);
@@ -470,14 +518,14 @@ function renderHome(){
     if (e.ss === "B") return;
     if (e.ss === "A") { const b = p.ex[i + 1];
       items.push(`<div class="it"><b>${esc(e.n)} + ${esc(b.n)}<span class="ss-tag">Superserie</span></b><span>${esc(e.sl)}×${esc(e.r)}</span></div>`);
-    } else items.push(`<div class="it"><b>${esc(e.n)}</b><span>${esc(e.sl)}×${esc(e.r)} · ${esc(e.int)}</span></div>`);
+    } else items.push(`<button class="it rec" data-info="${esc(e.n)}"><b>${esc(e.n)}</b><span>${esc(e.sl)}×${esc(e.r)} · ${esc(e.int)}<span class="chev" aria-hidden="true">›</span></span></button>`);
   });
   let resume = "";
   if (S.active) { const t = totals(), ap = activeDay();
     resume = `<div class="card resume"><div><div class="label">In corso</div><b>${ap.id} · S${ap.week} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
   const startLabel = S.active ? (S.active.day === id && S.active.week === w ? "Riprendi allenamento" : null) : "Inizia allenamento";
   $("#v-home").innerHTML = `
-    <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span class="pill">${PLAN_LABEL}</span></div>
+    <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span style="display:flex;gap:8px;align-items:center"><span class="pill">${PLAN_LABEL}</span><button class="btn2" id="search-btn" style="height:36px;padding:0 12px" aria-label="Cerca esercizi">${SEARCH}&nbsp;Cerca</button></span></div>
     ${resume}
     <div style="display:flex;flex-direction:column;gap:4px">
       <span class="eyebrow" style="color:${p.color}">Settimana ${w} di ${WEEKS} · Giorno ${p.id}${!S.active && w === auto && id === nextDay(auto) ? " · tocca a te" : ""}</span>
@@ -554,6 +602,7 @@ function renderWork(){
       <h1 class="big" style="font-size:40px;line-height:.95">${esc(ex.n)}</h1>
       <div class="chips"><span>${esc(ex.sl)}×${esc(ex.r)}</span><span>rec ${ex.ss === "A" ? "dopo B" : esc(ex.ss === "B" ? p.ex[ei - 1].restL : ex.restL)}</span><span>RIR ${esc(ex.rir)}</span><span>${esc(ex.int)}${pk ? " ≈ " + kg(pk) + " kg" : ""}</span>${ex.ss ? `<span class="ss">Superserie ${ex.ss}</span>` : ""}</div>
       ${ex.note ? `<p class="note">${esc(ex.note)}</p>` : ""}
+      <button class="link" data-info="${esc(ex.n)}" style="align-self:flex-start;height:32px">Come si fa: video e dettagli ›</button>
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
@@ -777,7 +826,12 @@ function progStorico(){
       <b>Backup</b>
       <p>I dati restano su questo telefono. Esporta ogni tanto un file di backup (in iCloud Drive, per esempio) per non perderli se cambi telefono.</p>
       <div class="btns"><button class="btn2" id="export">Esporta backup</button><button class="btn2" id="import">Importa backup</button></div>
-    </div>`;
+    </div>
+    ${S.history.some(h => !h.example) ? `<div class="card backup">
+      <b>Ricomincia da zero</b>
+      <p>Cancella tutti gli allenamenti salvati su questo telefono. Peso, girovita e luoghi restano. Non si può annullare: se vuoi conservarli, prima esporta un backup.</p>
+      <div class="btns"><button class="btn2" id="wipe" style="color:var(--red);border-color:var(--red)">Cancella tutti gli allenamenti (${S.history.filter(h => !h.example).length})</button></div>
+    </div>` : ""}`;
 }
 
 function renderProg(){
@@ -820,17 +874,81 @@ function clearExample(){
   saveHistory(); saveBody(); savePlaces(); render(); toast("Dati di esempio cancellati");
 }
 
+// ---- Esercizio e ricerca ----
+const ALL_EX = [...new Set(DAYS.flatMap(d => d.ex.map(e => e.n)))];
+const fold = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_-]/g, " ");
+const ytSearch = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+const imgSearch = q => "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent(q);
+const BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+function webLinks(q){
+  return `<div class="card list">
+      <a class="it rec" href="${ytSearch(q + " esecuzione")}" target="_blank" rel="noopener"><b>Altri video su YouTube</b><span>“${esc(q)}” ↗</span></a>
+      <a class="it rec" href="${imgSearch(q + " esercizio")}" target="_blank" rel="noopener"><b>Foto su Google Immagini</b><span>“${esc(q)}” ↗</span></a></div>`;
+}
+function renderInfo(){
+  const name = S.info, w = S.active ? S.active.week : curWeek();
+  const days = DAYS.filter(d => d.ex.some(e => e.n === name));
+  const best = seriesFor(name).reduce((a, p) => !a || p.v > a.v ? p : a, null);
+  const lastH = S.history.find(h => h.exercises.some(e => canon(e.name) === name && e.sets.length));
+  const lastE = lastH && lastH.exercises.find(e => canon(e.name) === name);
+  const cur = days.map(d => dayOf(d.id, w).ex.find(e => e.n === name)).find(Boolean);
+  const vids = VIDEOS[name] || [], online = navigator.onLine !== false;
+  const blocks = days.map(d => {
+    const rows = Array.from({length:WEEKS}, (_, i) => {
+      const e = dayOf(d.id, i + 1).ex.find(x => x.n === name);
+      return `<div class="it${i + 1 === w ? " now" : ""}"><b style="font-weight:500">Settimana ${i + 1}</b><span>${e ? `${esc(e.sl)}×${esc(e.r)} · ${esc(e.int)} · rec ${esc(e.restL)}` : "—"}</span></div>`;
+    }).join("");
+    return `<div style="display:flex;flex-direction:column;gap:8px"><span class="label" style="color:${d.color}">Giorno ${d.id} · ${esc(d.title)}</span><div class="card list weeks6">${rows}</div></div>`;
+  }).join("");
+  $("#v-info").innerHTML = `
+    <div class="w-top"><button class="icon-btn" data-back="1" aria-label="Indietro">${BACK}</button><div class="info"><span class="label">${days.map(d => d.id).join(" · ")}${cur ? " · " + esc(cur.d) : ""}</span></div></div>
+    <h1 class="big" style="font-size:42px">${esc(name)}</h1>
+    ${cur ? `<div class="chips"><span>${esc(cur.sl)}×${esc(cur.r)}</span><span>rec ${esc(cur.restL)}</span><span>RIR ${esc(cur.rir)}</span><span>${esc(cur.int)}${pctKg(cur) ? " ≈ " + kg(pctKg(cur)) + " kg" : ""}</span></div>` : ""}
+    ${cur && cur.note ? `<p class="note">${esc(cur.note)}</p>` : ""}
+    ${best || lastE ? `<div class="card kpis" style="padding:14px 16px">
+      <div><small>Serie migliore</small><b>${best ? kg(best.w) + " × " + best.r : "—"}</b></div>
+      <div><small>1RM stimato</small><b>${best ? "~" + Math.round(best.v) + " kg" : "—"}</b></div>
+      <div><small>Ultima volta</small><b>${lastE ? fdate(lastH.date) : best && best.sheet ? "2023" : "—"}</b></div></div>` : ""}
+    ${lastE ? `<p class="note" style="margin-top:-8px">Ultima volta: ${lastE.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps).join("  ")}</p>` : ""}
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">Video e foto</span>
+      ${online ? "" : `<p class="note">Sei senza connessione: i video si aprono quando torni online.</p>`}
+      ${vids.map(([id, t, ch, len]) => `<a class="card vid" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">
+        <span class="th" style="${online ? `background-image:url('https://i.ytimg.com/vi/${id}/mqdefault.jpg')` : ""}">${online ? "" : "▶"}</span>
+        <span><b>${esc(t)}</b><small>${esc(ch)} · ${esc(len)}</small></span></a>`).join("")}
+      ${webLinks(name.replace(/_/g, " "))}
+    </div>
+    ${blocks}`;
+}
+function searchResults(){
+  const q = fold(S.q.trim()), hits = ALL_EX.filter(n => !q || fold(n).includes(q));
+  return `${hits.length ? `<div class="card list">${hits.map(n => `<button class="it rec" data-info="${esc(n)}"><b>${esc(n)}</b><span>${DAYS.filter(d => d.ex.some(e => e.n === n)).map(d => d.id).join(" · ")}<span class="chev" aria-hidden="true">›</span></span></button>`).join("")}</div>`
+      : `<div class="card empty">Nessun esercizio della scheda si chiama così.</div>`}
+    ${S.q.trim() ? `<span class="label">Sul web</span>${webLinks(S.q.trim())}` : `<p class="note">Scrivi il nome di un esercizio. Se non è nella scheda puoi cercarlo sul web.</p>`}`;
+}
+function renderSearch(){
+  $("#v-info").innerHTML = `
+    <div class="w-top"><button class="icon-btn" data-back="1" aria-label="Indietro">${BACK}</button><h1 class="big" style="font-size:40px;flex:1">Cerca</h1></div>
+    <label><span class="sr">Cerca un esercizio</span><input class="qbox" id="q" type="search" placeholder="Squat, panca, lat machine…" autocomplete="off" enterkeyhint="search" value="${esc(S.q)}"></label>
+    <div id="sres" style="display:flex;flex-direction:column;gap:12px">${searchResults()}</div>`;
+}
+
 // ---- Navigazione ----
 function render(){
   document.body.classList.toggle("no-tabs", S.view === "work" && !!S.active);
-  ["home", "work", "prog"].forEach(v => $("#v-" + v).hidden = v !== S.view);
+  ["home", "work", "prog", "info"].forEach(v => $("#v-" + v).hidden = v !== S.view);
   document.querySelectorAll(".tabbar button").forEach(b => b.dataset.go === S.view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   $("#live-dot").hidden = !S.active;
   if (S.view === "home") renderHome();
   if (S.view === "work") renderWork();
   if (S.view === "prog") renderProg();
+  if (S.view === "info") S.info ? renderInfo() : renderSearch();
 }
-function go(v){ S.view = v; if (v !== "home") S.pick = null; render(); window.scrollTo(0, 0); }
+function go(v){ S.view = v; if (v === "work" || v === "prog") S.pick = null; render(); window.scrollTo(0, 0); }
+function openInfo(name){
+  if (S.view !== "info") { S.infoFrom = S.view; S.fromSearch = false; } else if (!S.info) S.fromSearch = true;
+  S.info = name; S.view = "info"; render(); window.scrollTo(0, 0);
+}
 
 let toastT;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
@@ -965,6 +1083,9 @@ document.addEventListener("click", e => {
   unlockAudio();
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.go) return go(b.dataset.go);
+  if (b.dataset.info) return openInfo(b.dataset.info);
+  if (b.id === "search-btn") { S.infoFrom = S.view; S.info = null; go("info"); const q = $("#q"); q && q.focus(); return; }
+  if (b.dataset.back) { if (S.info && S.fromSearch) { S.info = null; S.fromSearch = false; return go("info"); } return go(S.infoFrom || "home"); }
   if (b.dataset.pick) { S.pick = b.dataset.pick; return renderHome(); }
   if (b.id === "start") { if (S.active) return go("work"); return startWorkout(b.dataset.day, Number(b.dataset.week)); }
   if (b.dataset.wk) { S.wpick = Number(b.dataset.wk); S.pick = null; return renderHome(); }
@@ -993,10 +1114,16 @@ document.addEventListener("click", e => {
   if (b.id === "ex-clear") return clearExample();
   if (b.dataset.bdel) { S.body = S.body.filter(x => x.id !== b.dataset.bdel); saveBody(); return renderProg(); }
   if (b.id === "export") return exportData();
+  if (b.id === "wipe") {
+    if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "Sicuro? Tocca di nuovo per cancellare"; setTimeout(() => { if (b.isConnected) renderProg(); }, 4000); return; }
+    S.history = S.history.filter(h => h.example); saveHistory(); S.wpick = null; renderProg(); return toast("Allenamenti cancellati");
+  }
   if (b.id === "import") return $("#import-file").click();
 });
 document.addEventListener("input", e => {
-  const i = e.target; if (!i.dataset.k || !S.active) return;
+  const i = e.target;
+  if (i.id === "q") { S.q = i.value; $("#sres").innerHTML = searchResults(); return; }
+  if (!i.dataset.k || !S.active) return;
   (S.active.sets[i.dataset.k] ||= {})[i.dataset.f] = i.value; saveActive();
 });
 document.addEventListener("change", e => { if (e.target.id === "pex") { S.pex = e.target.value; renderProg(); } });
