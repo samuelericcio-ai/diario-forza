@@ -202,7 +202,7 @@ button.lift{border:0;text-align:left;color:inherit}
 .list .it.rec{border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;color:inherit}
 .list .it.rec:last-child{border-bottom:0}
 .list .it small{font-size:11.5px}
-.new{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--green);border-radius:4px;padding:1px 5px;vertical-align:2px}
+.new,.sess li span.new{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--green);border-radius:4px;padding:1px 5px;vertical-align:2px}
 .bars.b8,.bars-x.b8{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
 .bars.b8 span{font-size:10.5px}
 .bodyfig{width:100%;height:auto;display:block;max-height:440px}
@@ -291,7 +291,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 11; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 12; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -500,12 +500,14 @@ function pctKg(ex){
   const best = Math.max(...pts.map(p => p.v));
   return Math.round(best * parseFloat(m[1].replace(",", ".")) / 100 / 2.5) * 2.5;
 }
-// Valori proposti per la serie si: le serie dell'ultima volta; se non ci sono (o sono del 2023), l'obiettivo della scheda.
-function suggest(ex, prev, si){
-  const ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [];
-  if (prev.date && prev.date !== BASE_DATE) return ph;
-  const r = parseInt(ex.r);
-  return [pctKg(ex) ?? ph[0], isFinite(r) && !/′/.test(ex.r) ? r : ph[1]];
+// Valori proposti per la serie si: ripetizioni della scheda di questa settimana e kg dalla % del massimale;
+// dove la scheda non li dice (MAX, @12RM) quelli dell'ultima volta.
+function suggest(ex, prev, si, ei){
+  const ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [], r = parseInt(ex.r);
+  const sg = [pctKg(ex) ?? ph[0], isFinite(r) && !/′/.test(ex.r) ? r : ph[1]];
+  // Dopo la prima serie fatta oggi, il peso proposto è quello dell'ultima serie fatta.
+  for (let j = si - 1; ei != null && j >= 0; j--) { const d = S.active?.sets[ei + "-" + j]; if (d?.done && num(d.kg) != null) return [num(d.kg), sg[1]]; }
+  return sg;
 }
 const setCount = (ei) => activeDay().ex[ei].s + (S.active.extra[ei] || 0);
 function doneCount(ei){ let n = 0; for (let si = 0; si < setCount(ei); si++) if (S.active.sets[ei + "-" + si]?.done) n++; return n; }
@@ -585,7 +587,7 @@ function renderWork(){
   const prev = prevSets(A.day, ex.n), n = setCount(ei), pk = pctKg(ex);
   let cur = -1; for (let si = 0; si < n; si++) if (!A.sets[ei + "-" + si]?.done) { cur = si; break; }
   const rows = Array.from({length:n}, (_, si) => {
-    const s = A.sets[ei + "-" + si] || {}, ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [], sg = suggest(ex, prev, si);
+    const s = A.sets[ei + "-" + si] || {}, ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [], sg = suggest(ex, prev, si, ei);
     const cls = s.done ? "done" : si === cur ? "cur" : "";
     const phKg = ex.bw && !sg[0] ? "—" : (sg[0] ?? "");
     return `<div class="sg ${cls}">
@@ -593,7 +595,7 @@ function renderWork(){
       <span class="prev">${ph.length ? (ex.bw && !ph[0] ? "corpo" : kg(ph[0])) + " × " + ph[1] : "—"}</span>
       <label><span class="sr">Kg serie ${si + 1}</span><input id="kg-${ei}-${si}" data-k="${ei}-${si}" data-f="kg" inputmode="decimal" enterkeyhint="next" placeholder="${phKg === "—" || phKg === "" ? phKg : kg(phKg)}" value="${esc(s.kg ?? "")}"></label>
       <label><span class="sr">Ripetizioni serie ${si + 1}</span><input id="rp-${ei}-${si}" data-k="${ei}-${si}" data-f="reps" inputmode="numeric" enterkeyhint="done" placeholder="${sg[1] ?? ""}" value="${esc(s.reps ?? "")}"></label>
-      <label><span class="sr">RIR serie ${si + 1}</span><input id="rir-${ei}-${si}" data-k="${ei}-${si}" data-f="rir" inputmode="numeric" enterkeyhint="done" placeholder="${esc(ex.rir)}" value="${esc(s.rir ?? "")}" style="font-size:16px"></label>
+      <label><span class="sr">RIR serie ${si + 1}</span><input id="rir-${ei}-${si}" data-k="${ei}-${si}" data-f="rir" inputmode="numeric" enterkeyhint="done" placeholder="${s.done ? "–" : esc(ex.rir)}" value="${esc(s.rir ?? "")}" style="font-size:16px"></label>
       <button class="tick" data-tick="${ei}-${si}" aria-pressed="${!!s.done}" aria-label="Serie ${si + 1} ${s.done ? "fatta, tocca per annullare" : "fatta"}">${CHECK}</button>
     </div>`;
   }).join("");
@@ -746,7 +748,7 @@ function progVolume(){
   const avg = mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : null;
   return `
     <div class="stats">
-      <div class="card stat"><span class="num">${S.history.length}</span><small>allenamenti</small></div>
+      <div class="card stat"><span class="num">${S.history.length}</span><small>${S.history.length === 1 ? "allenamento" : "allenamenti"}</small></div>
       <div class="card stat"><span class="num">${weeks[7].n}<span class="muted" style="font-size:16px">/5</span></span><small>questa settimana</small></div>
       <div class="card stat"><span class="num">${avg ?? "—"}${avg ? '<span class="muted" style="font-size:16px"> min</span>' : ""}</span><small>durata media</small></div>
     </div>
@@ -882,7 +884,7 @@ function progStorico(){
       <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
       <div class="where"><span>${CLOCK}${timeRange(h)}</span>${where}</div>
       <div class="st"><span><b>${tons(sessTon(h))} t</b> sollevate</span><span><b>${ns}</b> serie</span>${h.minutes ? `<span><b>${h.minutes}</b> min</span>` : ""}${prs.length ? `<span class="up"><b class="up">${prs.length}</b> record</span>` : ""}</div>
-      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps + (s.rir != null ? " @" + s.rir : "")).join("  ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
+      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "")).join(" · ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
       <button class="del" data-del="${esc(h.id)}">Elimina</button>
     </article>`;
   }).join("");
@@ -1084,9 +1086,12 @@ function tick(ei, si){
   const A = S.active, p = activeDay(), ex = p.ex[ei], k = ei + "-" + si;
   const s = A.sets[k] ||= {};
   if (s.done) { s.done = false; saveActive(); renderWork(); return; }
-  const ph = suggest(ex, prevSets(A.day, ex.n), si);
+  const ph = suggest(ex, prevSets(A.day, ex.n), si, ei);
   if (num(s.kg) == null) s.kg = ph[0] ? String(ph[0]).replace(".", ",") : "";
   if (num(s.reps) == null) s.reps = ph[1] != null ? String(ph[1]) : "";
+  // Senza peso o ripetizioni la serie finirebbe a 0 nello storico e nell'Excel del coach: le chiede prima.
+  const miss = !ex.bw && num(s.kg) == null ? "kg" : !/′/.test(ex.r) && num(s.reps) == null ? "rp" : null;
+  if (miss) { saveActive(); const i = $(`#${miss}-${ei}-${si}`); i && i.focus(); return toast(miss === "kg" ? "Scrivi i kg di questa serie" : "Scrivi le ripetizioni fatte"); }
   s.done = true; s.t = Date.now();
   const left = i => setCount(i) - doneCount(i);
   if (ex.ss === "A") { if (left(ei + 1) > 0) A.idx = ei + 1; }
@@ -1176,7 +1181,7 @@ async function buildCoachFile(){
       e.sets.slice(0, 10).forEach((s, i) => {
         const c = XCOL.set + 5 * i + off;
         if (s.kg) put(c, r, s.kg);
-        put(c + 2, r, s.reps);
+        if (s.reps) put(c + 2, r, s.reps);
         if (s.rest) put(c + 3, r, restTxt(s.rest));
         if (s.rir != null) put(c + 4, r, s.rir);
       });
