@@ -288,6 +288,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
+const APP_VERSION = 10; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -893,6 +894,7 @@ function progStorico(){
       <p>I dati restano su questo telefono. Esporta ogni tanto un file di backup (in iCloud Drive, per esempio) per non perderli se cambi telefono.</p>
       <div class="btns"><button class="btn2" id="export">Esporta backup</button><button class="btn2" id="import">Importa backup</button></div>
     </div>
+    <p class="note" style="text-align:center;font-size:12px">Diario Forza · versione ${APP_VERSION}</p>
     ${S.history.length ? `<div class="card backup">
       <b>Ricomincia da zero</b>
       <p>Cancella tutti gli allenamenti salvati su questo telefono, compresi quelli di esempio. Peso, girovita e luoghi restano. Non si può annullare: se vuoi conservarli, prima esporta un backup.</p>
@@ -1236,7 +1238,11 @@ if (S.active) { S.view = "work"; keepAwake(); }
 render(); paintRest();
 // Chiede a iOS/Android di non cancellare i dati dell'app quando manca spazio.
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch {}
-if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
+// Controlla subito se c'è una versione nuova, e di nuovo ogni volta che l'app torna in primo piano.
+if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+  reg.update().catch(() => {});
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+}).catch(() => {});
 </script>
 </body>
 </html>
