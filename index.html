@@ -116,11 +116,15 @@ body.no-tabs .screen{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 150px
 .sg.done .n{color:var(--green)}
 .sg.done .tick{background:var(--green);border-color:var(--green)}
 .sg.done .tick svg{stroke:var(--on-green)}
-.help-q{width:30px;height:30px;justify-self:center;border-radius:50%;border:1.5px solid var(--line);background:transparent;color:var(--muted);font-weight:700;font-size:14px;letter-spacing:0;text-transform:none}
-.help-box{background:var(--card);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.help-box p{margin:0;line-height:1.35}
-.help-box b{color:var(--ink);display:inline-block;min-width:34px}
-.help-box .link{align-self:flex-start}
+.hcol{height:30px;padding:0 4px;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;letter-spacing:inherit;text-transform:inherit;display:flex;align-items:center;justify-content:center;gap:2px;border-radius:8px}
+.hcol[data-hcol="prev"]{justify-content:flex-start}
+.hcol i{font-style:normal;font-size:11px;transition:transform .15s}
+.hcol[aria-expanded="true"]{color:var(--ink);background:var(--card);border-color:var(--card)}
+.hcol[aria-expanded="true"] i{transform:rotate(180deg)}
+.sg.hpa{padding:0 4px;height:8px;margin-bottom:-6px}
+.sg.hpa i{justify-self:center;width:0;height:0;border:8px solid transparent;border-top:0;border-bottom-color:var(--card)}
+.hpop{background:var(--card);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.hpop b{color:var(--ink)}
 .sg.warm .n,.sg.warm.done .n,.link.warm-add{color:var(--yellow)}
 .sg.warm input{font-size:18px}
 .sg.warm.done{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
@@ -313,7 +317,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 18; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 19; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -594,6 +598,15 @@ function lastCard(){
 }
 
 // ---- Allenamento ----
+// Colonne delle serie: toccando il titolo si apre sotto la sua spiegazione (una alla volta).
+const HCOLS = [["prev", "Prima"], ["kg", "Kg"], ["rip", "Rip"], ["rir", "RIR"], ["ok", "✓"]];
+const HHELP = {
+  prev: () => `<b>Prima</b>: cosa hai fatto l'ultima volta in questa serie, kg × ripetizioni. Ti serve per sapere da dove ripartire.`,
+  kg: () => `<b>Kg</b>: il peso che hai usato in questa serie. Il numero grigio è quello proposto: se va bene lascialo, alla spunta lo prende lui.`,
+  rip: () => `<b>Rip</b>: le ripetizioni che hai fatto davvero. Se ne fai meno di quelle in grigio, scrivi il numero giusto.`,
+  rir: ex => `<b>RIR</b>: quante ripetizioni ti restavano prima di non farcela più. Ne hai fatte 5 e ne avresti fatte ancora 2 → scrivi <b>2</b>. Eri al limite → <b>0</b>.<br>Il grigio (${esc(ex.rir)}) è quello che chiede la scheda: scrivi il tuo numero, se no al coach non arriva.`,
+  ok: () => `<b>✓</b>: toccala quando hai finito la serie. La serie si salva e parte il timer di recupero. Se ti sei sbagliato, toccala di nuovo per annullare.`
+};
 function renderWork(){
   const el = $("#v-work");
   if (!S.active) {
@@ -603,8 +616,7 @@ function renderWork(){
   }
   const A = S.active, p = activeDay(), ei = A.idx, ex = p.ex[ei], t = totals();
   const prev = prevSets(A.day, ex.n), n = setCount(ei), pk = pctKg(ex);
-  // Spiegazione delle colonne: si apre da sola finché non tocchi "Ho capito", poi con il "?".
-  const showHelp = S.help ?? !store.get("helpSeen", false);
+  const hc = S.hcol; // colonna di cui è aperta la spiegazione
   let cur = -1; for (let si = 0; si < n; si++) if (!A.sets[ei + "-" + si]?.done) { cur = si; break; }
   const rows = Array.from({length:n}, (_, si) => {
     const s = A.sets[ei + "-" + si] || {}, ph = prev.sets[si] || prev.sets[prev.sets.length - 1] || [], sg = suggest(ex, prev, si, ei);
@@ -650,14 +662,8 @@ function renderWork(){
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
-      <div class="sg head"><span>#</span><span>Prima</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span style="text-align:center">RIR</span><button class="help-q" data-help="1" aria-expanded="${!!showHelp}" aria-label="Cosa sono kg, rip e RIR">?</button></div>
-      ${showHelp ? `<div class="help-box">
-        <p><b>KG</b> il peso che hai usato.</p>
-        <p><b>RIP</b> le ripetizioni che hai fatto.</p>
-        <p><b>RIR</b> quante ne avresti fatte ancora prima di non farcela: 2 = te ne restavano 2, 0 = al limite. Il numero grigio è quello che chiede la scheda: scrivi il tuo, se no al coach non arriva.</p>
-        <p><b>✓</b> tocca quando hai finito la serie: si salva e parte il recupero.</p>
-        <button class="link" data-help="0" style="height:32px">Ho capito</button>
-      </div>` : ""}
+      <div class="sg head"><span>#</span>${HCOLS.map(([k, l]) => `<button class="hcol" data-hcol="${k}" aria-expanded="${hc === k}">${l}<i aria-hidden="true">▾</i></button>`).join("")}</div>
+      ${hc ? `<div class="sg hpa" aria-hidden="true"><i style="grid-column:${HCOLS.findIndex(c => c[0] === hc) + 2}"></i></div><div class="hpop">${HHELP[hc](ex)}</div>` : ""}
       ${warm}
       <div class="sets-act"><button class="link warm-add" data-warm="1">+ Riscaldamento</button>${wn && !A.sets[ei + "-r" + (wn - 1)]?.done ? `<button class="link dim" data-warm="-1">− Togli riscaldamento</button>` : ""}</div>
       ${rows}
@@ -1353,11 +1359,7 @@ document.addEventListener("click", e => {
     e.warm.sort((a, b) => a.kg - b.kg); if (!e.warm.length) delete e.warm;
     S.openDet = hid; saveHistory(); return renderProg();
   }
-  if (b.dataset.help) {
-    if (b.dataset.help === "0") { S.help = false; store.set("helpSeen", true); }
-    else S.help = !(S.help ?? !store.get("helpSeen", false));
-    return renderWork();
-  }
+  if (b.dataset.hcol) { S.hcol = S.hcol === b.dataset.hcol ? null : b.dataset.hcol; return renderWork(); }
   if (b.dataset.wtick) { const [ei, j] = b.dataset.wtick.split("-").map(Number); return wtick(ei, j); }
   if (b.dataset.warm) {
     const A = S.active, ei = A.idx, w = (A.warm ||= {}), n = w[ei] || 0;
