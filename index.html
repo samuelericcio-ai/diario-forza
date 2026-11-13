@@ -291,7 +291,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 13; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 14; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -1123,11 +1123,11 @@ function finish(btn){
   finishArmed = 0;
   const A = S.active, p = activeDay();
   if (t.done) {
-    // Recupero reale = tempo fino alla serie successiva dello stesso esercizio (se meno di 15 minuti).
+    // Recupero reale = tempo fino alla serie successiva dello stesso esercizio (tra 20" e 15 minuti).
     const exercises = p.ex.map((ex, ei) => {
       const done = Array.from({length:setCount(ei)}, (_, si) => A.sets[ei + "-" + si]).filter(s => s && s.done);
       const sets = done.map((s, i) => { const gap = s.t && done[i + 1]?.t ? Math.round((done[i + 1].t - s.t) / 1000) : null;
-        return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: gap > 0 && gap < 900 ? gap : undefined }; });
+        return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: gap >= 20 && gap < 900 ? gap : undefined }; });
       const note = (A.notes?.[ei] || "").trim();
       return { name: ex.n, row: ex.row, sets, ...(note ? { note } : {}) };
     }).filter(e => e.sets.length || e.note);
@@ -1195,7 +1195,7 @@ async function buildCoachFile(){
         const c = XCOL.set + 5 * i + off;
         if (s.kg) put(c, r, s.kg);
         if (s.reps) put(c + 2, r, s.reps);
-        if (s.rest) put(c + 3, r, restTxt(s.rest));
+        if (s.rest >= 20) put(c + 3, r, restTxt(s.rest)); // sotto i 20" vuol dire serie spuntate insieme, non un recupero
         if (s.rir != null) put(c + 4, r, s.rir);
       });
       if (e.note) put(XCOL.feedback + off, r, e.note);

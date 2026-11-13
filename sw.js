@@ -1,5 +1,5 @@
 // Cache dell'app per l'uso senza connessione. Cambia VERSION a ogni rilascio.
-const VERSION = "forza-v13";
+const VERSION = "forza-v14";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "jszip.min.js", "scheda-coach.xlsx"];
 
 self.addEventListener("install", e => {
