@@ -179,6 +179,11 @@ body:not(.no-tabs) .rest{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0
 .sess ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px}
 .sess li{display:flex;justify-content:space-between;gap:10px}
 .sess li span:last-child{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.sess .det-hint{margin:2px 0 4px;font-size:12px;color:var(--muted)}
+.sess .setcs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;max-width:70%}
+.sess .setcs em{flex-basis:100%;text-align:right}
+.setc{height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12.5px;font-variant-numeric:tabular-nums}
+.setc.w{color:var(--yellow);border-color:var(--yellow);background:transparent}
 .sess .del{align-self:flex-start;border:0;background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;padding:6px 0}
 .sess .del.arm{color:var(--red);font-weight:700}
 .backup{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
@@ -295,7 +300,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 15; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 16; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -898,7 +903,9 @@ function progStorico(){
       <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
       <div class="where"><span>${CLOCK}${timeRange(h)}</span>${where}</div>
       <div class="st"><span><b>${tons(sessTon(h))} t</b> sollevate</span><span><b>${ns}</b> serie</span>${h.minutes ? `<span><b>${h.minutes}</b> min</span>` : ""}${prs.length ? `<span class="up"><b class="up">${prs.length}</b> record</span>` : ""}</div>
-      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.warm ? `<span class="muted">risc. ${e.warm.map(s => kg(s.kg) + "×" + s.reps).join(" · ")}</span><br>` : ""}${e.sets.map(s => (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "")).join(" · ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
+      <details${S.openDet === h.id ? " open" : ""} data-det="${esc(h.id)}"><summary>Dettaglio serie</summary><p class="det-hint">Tocca una serie per segnarla come riscaldamento (in giallo), o per rimetterla tra le serie di lavoro.</p><ul>${h.exercises.map((e, ei) => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span class="setcs">${(e.warm || []).map((s, i) =>
+        `<button class="setc w" data-swarm="${esc(h.id)}|${ei}|w|${i}" aria-label="Riscaldamento ${kg(s.kg)} per ${s.reps}: tocca per farla serie di lavoro">R ${kg(s.kg)}×${s.reps}</button>`).join("")}${e.sets.map((s, i) => { const t = (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "");
+        return `<button class="setc" data-swarm="${esc(h.id)}|${ei}|s|${i}" aria-label="Serie ${t}: tocca per farla riscaldamento">${t}</button>`; }).join("")}${e.note ? `<em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
       <button class="del" data-del="${esc(h.id)}">Elimina</button>
     </article>`;
   }).join("");
@@ -1297,6 +1304,14 @@ document.addEventListener("click", e => {
   if (b.dataset.pick) { S.pick = b.dataset.pick; return renderHome(); }
   if (b.id === "start") { if (S.active) return go("work"); return startWorkout(b.dataset.day, Number(b.dataset.week)); }
   if (b.dataset.wk) { S.wpick = Number(b.dataset.wk); S.pick = null; return renderHome(); }
+  if (b.dataset.swarm) {
+    const [hid, ei, kind, i] = b.dataset.swarm.split("|"), h = S.history.find(x => x.id === hid), e = h && h.exercises[+ei]; if (!e) return;
+    e.warm ||= [];
+    if (kind === "s") { const sel = e.sets.splice(+i, 1)[0]; e.warm.push({ kg: sel.kg, reps: sel.reps }); }
+    else { const w = e.warm.splice(+i, 1)[0]; e.sets.unshift({ kg: w.kg, reps: w.reps }); }
+    e.warm.sort((a, b) => a.kg - b.kg); if (!e.warm.length) delete e.warm;
+    S.openDet = hid; saveHistory(); return renderProg();
+  }
   if (b.dataset.wtick) { const [ei, j] = b.dataset.wtick.split("-").map(Number); return wtick(ei, j); }
   if (b.dataset.warm) {
     const A = S.active, ei = A.idx, w = (A.warm ||= {}), n = w[ei] || 0;
