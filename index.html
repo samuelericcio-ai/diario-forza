@@ -193,6 +193,10 @@ body:not(.no-tabs) .rest{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0
 .sess .setcs em{flex-basis:100%;text-align:right}
 .setc{height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12.5px;font-variant-numeric:tabular-nums}
 .setc.w{color:var(--yellow);border-color:var(--yellow);background:transparent}
+.edit-bar{padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:var(--muted);border:1px dashed var(--yellow)}
+.edit-bar b{color:var(--ink)}
+.edit-bar .btn2{align-self:flex-start}
+.sess-act{display:flex;align-items:center;gap:14px}
 .sess .del{align-self:flex-start;border:0;background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;padding:6px 0}
 .sess .del.arm{color:var(--red);font-weight:700}
 .backup{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
@@ -317,7 +321,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 19; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 20; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -552,9 +556,9 @@ function renderHome(){
   });
   let resume = "";
   if (S.active) { const t = totals(), ap = activeDay();
-    resume = `<div class="card resume"><div><div class="label">In corso</div><b>${ap.id} · S${ap.week} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
+    resume = `<div class="card resume"><div><div class="label">${S.active.editId ? "Modifica in corso" : "In corso"}</div><b>${ap.id} · S${ap.week} · ${esc(ap.title)}</b><div class="muted" style="font-size:13px">${t.done} di ${t.all} serie</div></div><button data-go="work">Riprendi</button></div>`; }
   const planDone = doneIn(WEEKS).size >= DAYS.length;
-  const startLabel = S.active ? (S.active.day === id && S.active.week === w ? "Riprendi allenamento" : null) : "Inizia allenamento";
+  const startLabel = S.active ? (!S.active.editId && S.active.day === id && S.active.week === w ? "Riprendi allenamento" : null) : "Inizia allenamento";
   $("#v-home").innerHTML = `
     <div class="row-top"><span class="muted" style="font-weight:500;text-transform:capitalize">${esc(date)}</span><span style="display:flex;gap:8px;align-items:center"><span class="pill">${PLAN_LABEL}</span><button class="btn2" id="search-btn" style="height:36px;padding:0 12px" aria-label="Cerca esercizi">${SEARCH}&nbsp;Cerca</button></span></div>
     ${resume}
@@ -570,7 +574,7 @@ function renderHome(){
     </div>
     <div class="card list">${items.join("")}</div>
     ${startLabel ? `<button class="cta" id="start" data-day="${id}" data-week="${w}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>${startLabel}</button>`
-      : `<p class="note">Finisci prima l'allenamento in corso per iniziarne un altro.</p>`}
+      : `<p class="note">${S.active.editId ? "Stai modificando un allenamento: salvalo o annullalo per iniziarne un altro." : "Finisci prima l'allenamento in corso per iniziarne un altro."}</p>`}
     <div style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Settimana ${w}</span>
       <div class="week">${DAYS.map(d => `<button class="wd${d.id === id ? " sel" : ""}${wd.has(d.id) ? " done" : ""}" data-pick="${d.id}" style="--pc:${d.color}" aria-pressed="${d.id === id}" aria-label="Giorno ${d.id}, ${esc(d.title)}${wd.has(d.id) ? ", fatto" : ""}"><span class="disc"><i></i>${CHECK}</span><small>${d.id} ${esc(d.short)}</small></button>`).join("")}</div>
@@ -649,8 +653,8 @@ function renderWork(){
   el.innerHTML = `
     <div class="w-top">
       <button class="icon-btn" data-go="home" aria-label="Torna a Oggi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="info"><span class="eyebrow" style="color:${p.color};font-size:12px">${p.id} · S${p.week} · ${esc(p.title)}</span><span><span id="elapsed">0:00</span> · ${t.done} di ${t.all} serie${A.loc ? " · " + esc(placeLabel(A.loc)) : ""}</span></div>
-      <button class="finish" id="finish">${t.done ? "Termina" : "Esci"}</button>
+      <div class="info"><span class="eyebrow" style="color:${p.color};font-size:12px">${A.editId ? "Modifica · " : ""}${p.id} · S${p.week} · ${esc(p.title)}</span><span>${A.editId ? fdate(A.startedAt, {weekday:"short", day:"numeric", month:"short"}) : '<span id="elapsed">0:00</span>'} · ${t.done} di ${t.all} serie${A.loc ? " · " + esc(placeLabel(A.loc)) : ""}</span></div>
+      <button class="finish" id="finish">${finishLabel()}</button>
     </div>
     <div class="bar" style="--pc:${p.color}"><i style="width:${t.all ? t.done / t.all * 100 : 0}%"></i></div>
     <div class="exnav">${nav}</div>
@@ -674,8 +678,9 @@ function renderWork(){
       <span class="label">Timer manuale</span>
       <div class="opts">${[[60,"1′"],[90,"1′30″"],[120,"2′"],[180,"3′"]].map(([s, l]) => `<button data-rest="${s}" aria-label="Recupero di ${l}">${l}</button>`).join("")}</div>
     </div>
+    ${A.editId ? `<div class="card edit-bar"><span>Stai modificando l'allenamento del ${fdate(A.startedAt, {day:"numeric", month:"long"})}. Cambia quello che vuoi e premi <b>Salva</b> in alto.</span><button class="btn2" id="edit-cancel">Annulla modifiche</button></div>` : ""}
     ${nx ? `<button class="card next" data-ex="${ei + 1}"><span class="label">Dopo</span><b>${esc(nx.n)}</b><span>${esc(nx.sl)}×${esc(nx.r)}</span></button>`
-         : `<button class="card next" id="finish2"><span class="label">Fine</span><b>Ultimo esercizio</b><span>Termina e salva</span></button>`}`;
+         : `<button class="card next" id="finish2"><span class="label">Fine</span><b>Ultimo esercizio</b><span>${A.editId ? "Salva le modifiche" : "Termina e salva"}</span></button>`}`;
   tickElapsed();
 }
 function tickElapsed(){
@@ -934,7 +939,7 @@ function progStorico(){
       <details${S.openDet === h.id ? " open" : ""} data-det="${esc(h.id)}"><summary>Dettaglio serie</summary><p class="det-hint">Tocca una serie per segnarla come riscaldamento (in giallo), o per rimetterla tra le serie di lavoro.</p><ul>${h.exercises.map((e, ei) => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span class="setcs">${(e.warm || []).map((s, i) =>
         `<button class="setc w" data-swarm="${esc(h.id)}|${ei}|w|${i}" aria-label="Riscaldamento ${kg(s.kg)} per ${s.reps}: tocca per farla serie di lavoro">R ${kg(s.kg)}×${s.reps}</button>`).join("")}${e.sets.map((s, i) => { const t = (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "");
         return `<button class="setc" data-swarm="${esc(h.id)}|${ei}|s|${i}" aria-label="Serie ${t}: tocca per farla riscaldamento">${t}</button>`; }).join("")}${e.note ? `<em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
-      <button class="del" data-del="${esc(h.id)}">Elimina</button>
+      <div class="sess-act">${h.plan === PLAN_ID && h.week ? `<button class="btn2" data-edit="${esc(h.id)}" style="height:36px">Modifica</button>` : ""}<button class="del" data-del="${esc(h.id)}">Elimina</button></div>
     </article>`;
   }).join("");
   return `${coachCard()}
@@ -1148,6 +1153,24 @@ function startWorkout(day, week){
     } catch {}
   }
 }
+// Riapre un allenamento salvato nella schermata dell'allenamento, con le serie già spuntate.
+function editWorkout(id){
+  if (S.active) return toast(S.active.editId ? "Stai già modificando un allenamento: salvalo o annullalo" : "Finisci prima l'allenamento in corso");
+  const h = S.history.find(x => x.id === id); if (!h || h.plan !== PLAN_ID || !h.week) return;
+  const p = dayOf(h.day, h.week), used = new Set(), str = v => v == null ? "" : String(v).replace(".", ",");
+  const A = { day: h.day, week: h.week, startedAt: h.startedAt || h.date, idx: 0, sets: {}, extra: {}, warm: {}, notes: {}, loc: h.loc || null, editId: h.id };
+  p.ex.forEach((ex, ei) => {
+    const k = h.exercises.findIndex((e, i) => !used.has(i) && (e.row ? e.row === ex.row : canon(e.name) === ex.n)); if (k < 0) return;
+    used.add(k); const e = h.exercises[k];
+    e.sets.forEach((x, si) => A.sets[ei + "-" + si] = { kg: x.kg ? str(x.kg) : "", reps: str(x.reps), rir: str(x.rir), done: true, rest: x.rest });
+    if (e.sets.length > ex.s) A.extra[ei] = e.sets.length - ex.s;
+    (e.warm || []).forEach((x, j) => A.sets[ei + "-r" + j] = { kg: str(x.kg), reps: str(x.reps), done: true });
+    if (e.warm) A.warm[ei] = e.warm.length;
+    if (e.note) A.notes[ei] = e.note;
+  });
+  S.active = A; S.hcol = null; saveActive(); go("work");
+}
+function cancelEdit(){ S.active = null; saveActive(); stopRest(); S.ptab = "storico"; go("prog"); toast("Modifiche annullate"); }
 function tick(ei, si){
   const A = S.active, p = activeDay(), ex = p.ex[ei], k = ei + "-" + si;
   const s = A.sets[k] ||= {};
@@ -1169,7 +1192,7 @@ function tick(ei, si){
   const left = i => setCount(i) - doneCount(i);
   if (ex.ss === "A") { if (left(ei + 1) > 0) A.idx = ei + 1; }
   else {
-    startRest(ex.ss === "B" ? p.ex[ei - 1].rest : ex.rest, ex.n + " · serie " + (si + 1));
+    if (!A.editId) startRest(ex.ss === "B" ? p.ex[ei - 1].rest : ex.rest, ex.n + " · serie " + (si + 1));
     if (ex.ss === "B" && left(ei - 1) > 0) A.idx = ei - 1;
     else if (left(ei) === 0) { const nx = p.ex.findIndex((_, i) => i > ei && left(i) > 0); if (nx >= 0) A.idx = nx; }
   }
@@ -1185,21 +1208,32 @@ function wtick(ei, j){
   s.done = true; s.t = Date.now(); saveActive(); renderWork();
 }
 let finishArmed = 0;
+const finishLabel = () => S.active?.editId ? "Salva" : totals().done ? "Termina" : "Esci";
 function finish(btn){
   const t = totals();
-  if (Date.now() - finishArmed > 3500) { finishArmed = Date.now(); btn.classList.add("arm"); btn.textContent = t.done ? "Salvo? Tocca" : "Esco? Tocca"; setTimeout(() => { btn.classList.remove("arm"); btn.textContent = t.done ? "Termina" : "Esci"; }, 3500); return; }
+  if (Date.now() - finishArmed > 3500) { finishArmed = Date.now(); btn.classList.add("arm"); btn.textContent = t.done ? "Salvo? Tocca" : "Esco? Tocca"; setTimeout(() => { btn.classList.remove("arm"); btn.textContent = finishLabel(); }, 3500); return; }
   finishArmed = 0;
   const A = S.active, p = activeDay();
+  if (A.editId && !t.done) return cancelEdit();
   if (t.done) {
     // Recupero reale = tempo fino alla serie successiva dello stesso esercizio (tra 20" e 15 minuti).
     const exercises = p.ex.map((ex, ei) => {
       const done = Array.from({length:setCount(ei)}, (_, si) => A.sets[ei + "-" + si]).filter(s => s && s.done);
       const sets = done.map((s, i) => { const gap = s.t && done[i + 1]?.t ? Math.round((done[i + 1].t - s.t) / 1000) : null;
-        return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: gap >= 20 && gap < 900 ? gap : undefined }; });
+        // In modifica le serie non ritoccate tengono il recupero che avevano.
+        const rest = gap != null ? gap : s.rest;
+        return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: rest >= 20 && rest < 900 ? rest : undefined }; });
       const note = (A.notes?.[ei] || "").trim();
       const warm = Array.from({length:A.warm?.[ei] || 0}, (_, j) => A.sets[ei + "-r" + j]).filter(s => s && s.done).map(s => ({ kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0 }));
       return { name: ex.n, row: ex.row, sets, ...(warm.length ? { warm } : {}), ...(note ? { note } : {}) };
     }).filter(e => e.sets.length || e.note || e.warm);
+    const old = A.editId && S.history.find(h => h.id === A.editId);
+    if (old) {
+      old.exercises = exercises; old.edited = new Date().toISOString(); saveHistory();
+      S.active = null; S.wpick = null; S.pick = null; saveActive(); stopRest();
+      S.ptab = "storico"; S.openDet = old.id; go("prog");
+      return toast("Modifiche salvate");
+    }
     const now = new Date();
     S.history.unshift({ id: "s" + now.getTime(), plan: PLAN_ID, week: A.week, day: A.day, date: now.toISOString(), startedAt: A.startedAt, loc: A.loc || null, exercises,
       minutes: Math.max(1, Math.round((now - new Date(A.startedAt)) / 60000)) });
@@ -1360,6 +1394,8 @@ document.addEventListener("click", e => {
     S.openDet = hid; saveHistory(); return renderProg();
   }
   if (b.dataset.hcol) { S.hcol = S.hcol === b.dataset.hcol ? null : b.dataset.hcol; return renderWork(); }
+  if (b.dataset.edit) return editWorkout(b.dataset.edit);
+  if (b.id === "edit-cancel") return cancelEdit();
   if (b.dataset.wtick) { const [ei, j] = b.dataset.wtick.split("-").map(Number); return wtick(ei, j); }
   if (b.dataset.warm) {
     const A = S.active, ei = A.idx, w = (A.warm ||= {}), n = w[ei] || 0;
