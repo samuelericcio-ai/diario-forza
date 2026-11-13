@@ -116,6 +116,10 @@ body.no-tabs .screen{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 150px
 .sg.done .n{color:var(--green)}
 .sg.done .tick{background:var(--green);border-color:var(--green)}
 .sg.done .tick svg{stroke:var(--on-green)}
+.sg.warm .n,.sg.warm.done .n,.link.warm-add{color:var(--yellow)}
+.sg.warm input{font-size:18px}
+.sg.warm.done{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.sg.warm.done .tick{background:var(--yellow);border-color:var(--yellow)}
 .sets-act{display:flex;gap:16px}
 .exnote{display:flex;flex-direction:column;gap:6px}
 .exnote textarea{width:100%;min-height:64px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;padding:10px 12px;resize:vertical}
@@ -291,7 +295,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 14; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 15; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -352,20 +356,7 @@ const DAYS = [
 ];
 const LIFTS = ["Squat", "Panca piana", "Stacco da terra", "Row T-Bar"];
 // Scheda precedente (13/05/23): la serie migliore di ogni esercizio resta come punto di partenza nei progressi.
-const BASE_DATE = "2023-05-13";
-const BASE = {
-  "Squat": [[80,6],[90,6],[100,6],[100,6]],
-  "Panca piana": [[75,5],[80,5],[83,5],[85,5],[88,5]],
-  "Stacco da terra": [[100,6],[110,5],[120,5],[130,6],[135,6]],
-  "Squat Bulgaro": [[20,24],[20,24],[20,24]],
-  "Pulley basso": [[67,12],[67,12],[67,12]],
-  "Alzate laterali": [[20,15],[20,15],[20,15]],
-  "Lat machine avanti": [[60,8],[62,8],[62,8],[62,8]],
-  "Panca inclinata con bilanciere": [[60,8],[50,8],[55,8]],
-  "Pulldown alla corda": [[26,12],[16,13],[26,15]],
-  "Croci panca piana": [[18,10],[18,15],[18,15]],
-  "Curl Panca 45°": [[20,10],[20,10],[20,10]]
-};
+
 // Stessi esercizi scritti in modo diverso nella scheda vecchia.
 const ALIAS = { "Lat Machine Avanti": "Lat machine avanti", "Croci Panca piana": "Croci panca piana", "Panca inclinata Bilanciere": "Panca inclinata con bilanciere", "Pull down corda": "Pulldown alla corda", "Curl manubri panca 45°": "Curl Panca 45°" };
 const canon = n => ALIAS[n] || n;
@@ -465,6 +456,11 @@ const S = {
   height: store.get("height", null),    // altezza in cm
   meas: "waist"                         // misura nel grafico di Corpo
 };
+// Il diario parte dal primo allenamento vero, il 13/11/2026: via una volta sola quelli di prima.
+if (!store.get("clean20261113", false)) {
+  S.history = S.history.filter(h => h.example || new Date(h.date) >= new Date(2026, 10, 13));
+  store.set("history", S.history); store.set("clean20261113", true);
+}
 const saveHistory = () => { S.history.sort((a, b) => b.date.localeCompare(a.date)); store.set("history", S.history); };
 const savePlaces = () => store.set("places", S.places);
 const saveBody = () => { S.body.sort((a, b) => a.date.localeCompare(b.date)); store.set("body", S.body); };
@@ -481,14 +477,14 @@ function autoWeek(){
 }
 const curWeek = () => S.wpick || autoWeek();
 function nextDay(w = curWeek()){ const d = doneIn(w); return (DAYS.find(x => !d.has(x.id)) || DAYS[0]).id; }
-// Le ultime serie dell'esercizio: prima nello stesso giorno, poi in qualunque giorno, poi nella scheda 2023.
+// Le ultime serie dell'esercizio: prima nello stesso giorno, poi in qualunque giorno.
 function prevSets(dayId, name){
   for (const same of [true, false]) for (const h of S.history) {
     if (same && h.day !== dayId) continue;
     const e = h.exercises.find(x => canon(x.name) === name);
     if (e && e.sets.length) return { sets: e.sets.map(s => [s.kg, s.reps]), date: h.date };
   }
-  return BASE[name] ? { sets: BASE[name], date: BASE_DATE } : { sets: [], date: null };
+  return { sets: [], date: null };
 }
 function tonnage(sets){ return sets.reduce((a, [w, r]) => a + (w || 0) * (r || 0), 0); }
 function lastTonnage(dayId){
@@ -603,6 +599,19 @@ function renderWork(){
       <button class="tick" data-tick="${ei}-${si}" aria-pressed="${!!s.done}" aria-label="Serie ${si + 1} ${s.done ? "fatta, tocca per annullare" : "fatta"}">${CHECK}</button>
     </div>`;
   }).join("");
+  // Serie di riscaldamento: si salvano a parte, non contano per record, grafici e tonnellaggio.
+  const wn = A.warm?.[ei] || 0;
+  const warm = Array.from({length:wn}, (_, j) => {
+    const k = ei + "-r" + j, s = A.sets[k] || {};
+    return `<div class="sg warm${s.done ? " done" : ""}">
+      <span class="n">R</span>
+      <span class="prev">riscald.</span>
+      <label><span class="sr">Kg riscaldamento ${j + 1}</span><input id="kg-${k}" data-k="${k}" data-f="kg" inputmode="decimal" enterkeyhint="next" placeholder="kg" value="${esc(s.kg ?? "")}"></label>
+      <label><span class="sr">Ripetizioni riscaldamento ${j + 1}</span><input id="rp-${k}" data-k="${k}" data-f="reps" inputmode="numeric" enterkeyhint="done" placeholder="rip" value="${esc(s.reps ?? "")}"></label>
+      <span></span>
+      <button class="tick" data-wtick="${ei}-${j}" aria-pressed="${!!s.done}" aria-label="Riscaldamento ${j + 1} ${s.done ? "fatto, tocca per annullare" : "fatto"}">${CHECK}</button>
+    </div>`;
+  }).join("");
   const nx = p.ex[ei + 1];
   const nav = p.ex.map((e, i) => `<button data-ex="${i}" class="${i === ei ? "cur" : ""}${doneCount(i) >= setCount(i) ? " full" : ""}" aria-label="${esc(e.n)}">${i + 1}</button>`).join("");
   el.innerHTML = `
@@ -621,7 +630,9 @@ function renderWork(){
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
-      <div class="sg head"><span>#</span><span>${prev.date === BASE_DATE ? "2023" : "Prima"}</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span style="text-align:center">RIR</span><span></span></div>
+      <div class="sg head"><span>#</span><span>Prima</span><span style="text-align:center">Kg</span><span style="text-align:center">Rip</span><span style="text-align:center">RIR</span><span></span></div>
+      ${warm}
+      <div class="sets-act"><button class="link warm-add" data-warm="1">+ Riscaldamento</button>${wn && !A.sets[ei + "-r" + (wn - 1)]?.done ? `<button class="link dim" data-warm="-1">− Togli riscaldamento</button>` : ""}</div>
       ${rows}
       <div class="sets-act"><button class="link" data-extra="1">+ Aggiungi serie</button>${n > ex.smin ? `<button class="link dim" data-extra="-1">− Togli serie</button>` : ""}</div>
       <label class="exnote"><span class="label">Nota per il coach</span><textarea data-note="${ei}" rows="2" maxlength="500" placeholder="Es. ultima serie pesante, fastidio alla spalla…">${esc(A.notes?.[ei] ?? "")}</textarea></label>
@@ -646,26 +657,24 @@ const EX_NAMES = [...new Set(DAYS.flatMap(p => p.ex.filter(e => !e.bw && e.n !==
 const fdate = (d, o = {day:"numeric", month:"short"}) => new Date(d).toLocaleDateString("it-IT", o);
 function sessTon(h){ return h.exercises.reduce((a, e) => a + tonnage(e.sets.map(s => [s.kg, s.reps])), 0); }
 function bestOf(sets){ let b = null; for (const s of sets) { const v = e1rm(s.kg, s.reps); if (v && (!b || v > b.v)) b = { v, w: s.kg, r: s.reps }; } return b; }
-const sheetBest = name => BASE[name] ? bestOf(BASE[name].map(([kg, reps]) => ({kg, reps}))) : null;
-// Serie migliore per ogni allenamento, dalla scheda 2023 in poi (ordine cronologico).
+// Serie migliore per ogni allenamento (ordine cronologico).
 function seriesFor(name){
-  const pts = [], sb = sheetBest(name);
-  if (sb) pts.push({ date: BASE_DATE, ...sb, sheet: true });
+  const pts = [];
   [...S.history].reverse().forEach(h => {
     const e = h.exercises.find(x => canon(x.name) === name); if (!e) return;
     const b = bestOf(e.sets); if (b) pts.push({ date: h.date, ...b });
   });
   return pts;
 }
-// Esercizi in cui l'allenamento h ha battuto il record precedente (scheda compresa).
+// Esercizi in cui l'allenamento h ha battuto il record precedente. La prima volta non è un record.
 function prsIn(h){
   if (!h) return [];
   const older = S.history.filter(x => x.date < h.date);
   return h.exercises.filter(e => {
     const b = bestOf(e.sets); if (!b) return false;
-    let prev = sheetBest(canon(e.name))?.v || 0;
+    let prev = 0;
     older.forEach(o => { const oe = o.exercises.find(x => canon(x.name) === canon(e.name)); const ob = oe && bestOf(oe.sets); if (ob && ob.v > prev) prev = ob.v; });
-    return b.v > prev + 0.01;
+    return prev > 0 && b.v > prev + 0.01;
   }).map(e => canon(e.name));
 }
 // ---- Orari e luoghi ----
@@ -704,7 +713,7 @@ function lineChart(pts, val, color, unit, label){
     ${grid}<path d="${pd} L${x(last).toFixed(1)} ${H - B} L${x(0).toFixed(1)} ${H - B} Z" fill="${color}" opacity=".12"/>
     <path d="${pd}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}
     <text x="${lx.toFixed(1)}" y="${(y(vs[last]) - 10).toFixed(1)}" text-anchor="end" font-size="12" font-weight="700" fill="var(--ink)">${kg(Math.round(vs[last] * 10) / 10)} ${unit}</text>
-    <text x="${L}" y="${H - 7}" font-size="10" fill="var(--muted)">${pts[0].sheet ? "scheda" : fdate(pts[0].date)}</text>
+    <text x="${L}" y="${H - 7}" font-size="10" fill="var(--muted)">${fdate(pts[0].date)}</text>
     <text x="${W - R}" y="${H - 7}" text-anchor="end" font-size="10" fill="var(--muted)">${fdate(pts[last].date)}</text></svg>`;
 }
 // good: 1 = salire è un bene, -1 = scendere è un bene, 0 = neutro
@@ -715,25 +724,25 @@ function progForza(){
   const pts = seriesFor(name), first = pts[0], last = pts[pts.length - 1];
   const lifts = LIFTS.map(n => { const s = seriesFor(n); return { n, base: s[0], cur: s[s.length - 1] }; });
   const lastPR = new Set(prsIn(S.history[0]));
-  const recs = EX_NAMES.map(n => { const s = seriesFor(n).filter(p => !p.sheet); if (!s.length) return null;
+  const recs = EX_NAMES.map(n => { const s = seriesFor(n); if (!s.length) return null;
     const best = s.reduce((a, p) => p.v > a.v ? p : a), heavy = s.reduce((a, p) => p.w > a.w ? p : a); return { n, best, heavy }; }).filter(Boolean);
   return `
     <div class="lifts">${lifts.map(l => { if (!l.cur) return `<button class="card lift" data-pex="${esc(l.n)}"><span class="t">${esc(l.n)}</span><span class="num">—</span><span class="s">dopo il primo allenamento</span></button>`;
       const d = l.cur.v - l.base.v;
       return `<button class="card lift" data-pex="${esc(l.n)}"><span class="t">${esc(l.n)}</span>
         <span class="num">${Math.round(l.cur.v)}<small> kg</small></span>
-        <span class="s">${l.cur.sheet ? "scheda 2023" : `da ${kg(l.cur.w)} × ${l.cur.r} · ${delta(d, "kg")}`}</span></button>`; }).join("")}</div>
+        <span class="s">da ${kg(l.cur.w)} × ${l.cur.r} · ${delta(d, "kg")}</span></button>`; }).join("")}</div>
     <div class="card chart">
       <div class="hd"><b>Andamento</b><span>1RM stimato</span></div>
       <label class="sel"><span class="sr">Esercizio</span><select id="pex">${EX_NAMES.map(n => `<option${n === name ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       ${pts.length ? `${lineChart(pts, p => p.v, "var(--red)", "kg", "1RM stimato " + name)}
       <div class="kpis">
         <div><small>Ora</small><b>${Math.round(last.v)} kg</b></div>
-        <div><small>${first.sheet ? "Dal 2023" : "Dall'inizio"}</small><b>${delta(last.v - first.v, "kg")}</b></div>
+        <div><small>Dall'inizio</small><b>${delta(last.v - first.v, "kg")}</b></div>
         <div><small>Serie migliore</small><b>${kg(last.w)} × ${last.r}</b></div>
       </div>` : `<p class="note">Ancora nessuna serie salvata per questo esercizio.</p>`}
       ${pts.length > 1 ? `<div class="tbl"><div class="tr th"><span>Data</span><span>Serie migliore</span><span>1RM</span></div>${pts.slice(-6).reverse().map(p =>
-        `<div class="tr"><span>${p.sheet ? "Scheda 2023" : fdate(p.date, {weekday:"short", day:"numeric", month:"short"})}</span><span>${kg(p.w)} × ${p.r}</span><span>${Math.round(p.v)}</span></div>`).join("")}</div>` : ""}
+        `<div class="tr"><span>${fdate(p.date, {weekday:"short", day:"numeric", month:"short"})}</span><span>${kg(p.w)} × ${p.r}</span><span>${Math.round(p.v)}</span></div>`).join("")}</div>` : ""}
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Record personali</span>
@@ -889,7 +898,7 @@ function progStorico(){
       <div class="h"><i style="--pc:${p.color}"></i><b>${dayTag(h)} · ${esc(p.title)}</b><time>${fdate(h.date, {weekday:"short", day:"numeric", month:"short"})}</time></div>
       <div class="where"><span>${CLOCK}${timeRange(h)}</span>${where}</div>
       <div class="st"><span><b>${tons(sessTon(h))} t</b> sollevate</span><span><b>${ns}</b> serie</span>${h.minutes ? `<span><b>${h.minutes}</b> min</span>` : ""}${prs.length ? `<span class="up"><b class="up">${prs.length}</b> record</span>` : ""}</div>
-      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.sets.map(s => (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "")).join(" · ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
+      <details><summary>Dettaglio serie</summary><ul>${h.exercises.map(e => `<li><span>${esc(e.name)}${prs.includes(e.name) ? ' <span class="new">PR</span>' : ""}</span><span>${e.warm ? `<span class="muted">risc. ${e.warm.map(s => kg(s.kg) + "×" + s.reps).join(" · ")}</span><br>` : ""}${e.sets.map(s => (!s.kg && !s.reps ? "fatto" : (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps) + (s.rir != null ? " @" + s.rir : "")).join(" · ")}${e.note ? `<br><em>${esc(e.note)}</em>` : ""}</span></li>`).join("")}</ul></details>
       <button class="del" data-del="${esc(h.id)}">Elimina</button>
     </article>`;
   }).join("");
@@ -934,9 +943,9 @@ function renderProg(){
 function loadExample(){
   const now = new Date(), start = monday(now); start.setDate(start.getDate() - 7 * 6); start.setHours(18, 30, 0, 0);
   let n = 0;
-  // Carichi di partenza inventati: la serie migliore 2023, o un valore tipico per il distretto.
+  // Carichi di partenza inventati: un valore tipico per il distretto.
   const KG = { Quadricipiti: 90, Femorali: 100, Dorso: 65, Petto: 60, Deltoidi: 14, Tricipiti: 25, Bicipiti: 14 };
-  const startKg = e => BASE[e.n] ? Math.max(...BASE[e.n].map(s => s[0])) : e.bw ? 0 : KG[e.d] || 20;
+  const startKg = e => e.bw ? 0 : KG[e.d] || 20;
   for (let w = 0; w < 7; w++) DAYS.forEach((d, di) => {
     const date = new Date(start); date.setDate(start.getDate() + w * 7 + [0, 1, 3, 4, 5][di]);
     if (date >= now) return;
@@ -991,7 +1000,7 @@ function renderInfo(){
     ${best || lastE ? `<div class="card kpis" style="padding:14px 16px">
       <div><small>Serie migliore</small><b>${best ? kg(best.w) + " × " + best.r : "—"}</b></div>
       <div><small>1RM stimato</small><b>${best ? "~" + Math.round(best.v) + " kg" : "—"}</b></div>
-      <div><small>Ultima volta</small><b>${lastE ? fdate(lastH.date) : best && best.sheet ? "2023" : "—"}</b></div></div>` : ""}
+      <div><small>Ultima volta</small><b>${lastE ? fdate(lastH.date) : "—"}</b></div></div>` : ""}
     ${lastE ? `<p class="note" style="margin-top:-8px">Ultima volta: ${lastE.sets.map(s => (s.kg ? kg(s.kg) : "corpo") + "×" + s.reps).join("  ")}</p>` : ""}
     <div style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Video e foto</span>
@@ -1116,6 +1125,14 @@ function tick(ei, si){
   saveActive(); renderWork();
   if (A.idx !== ei) window.scrollTo({ top: 0, behavior: "smooth" });
 }
+function wtick(ei, j){
+  const k = ei + "-r" + j, s = S.active.sets[k] ||= {};
+  if (s.done) { if (Date.now() - (s.t || 0) < 800) return; s.done = false; saveActive(); return renderWork(); }
+  const kgN = num(s.kg), rpN = num(s.reps);
+  const miss = kgN == null || kgN < 0 || kgN > 500 ? ["kg", "Scrivi i kg del riscaldamento"] : rpN == null || rpN < 1 || rpN > 100 || rpN % 1 ? ["rp", "Scrivi le ripetizioni del riscaldamento"] : null;
+  if (miss) { renderWork(); const i = document.getElementById(miss[0] + "-" + k); i && i.focus(); return toast(miss[1]); }
+  s.done = true; s.t = Date.now(); saveActive(); renderWork();
+}
 let finishArmed = 0;
 function finish(btn){
   const t = totals();
@@ -1129,8 +1146,9 @@ function finish(btn){
       const sets = done.map((s, i) => { const gap = s.t && done[i + 1]?.t ? Math.round((done[i + 1].t - s.t) / 1000) : null;
         return { kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0, rir: num(s.rir) ?? undefined, rest: gap >= 20 && gap < 900 ? gap : undefined }; });
       const note = (A.notes?.[ei] || "").trim();
-      return { name: ex.n, row: ex.row, sets, ...(note ? { note } : {}) };
-    }).filter(e => e.sets.length || e.note);
+      const warm = Array.from({length:A.warm?.[ei] || 0}, (_, j) => A.sets[ei + "-r" + j]).filter(s => s && s.done).map(s => ({ kg: num(s.kg) ?? 0, reps: num(s.reps) ?? 0 }));
+      return { name: ex.n, row: ex.row, sets, ...(warm.length ? { warm } : {}), ...(note ? { note } : {}) };
+    }).filter(e => e.sets.length || e.note || e.warm);
     const now = new Date();
     S.history.unshift({ id: "s" + now.getTime(), plan: PLAN_ID, week: A.week, day: A.day, date: now.toISOString(), startedAt: A.startedAt, loc: A.loc || null, exercises,
       minutes: Math.max(1, Math.round((now - new Date(A.startedAt)) / 60000)) });
@@ -1198,7 +1216,8 @@ async function buildCoachFile(){
         if (s.rest >= 20) put(c + 3, r, restTxt(s.rest)); // sotto i 20" vuol dire serie spuntate insieme, non un recupero
         if (s.rir != null) put(c + 4, r, s.rir);
       });
-      if (e.note) put(XCOL.feedback + off, r, e.note);
+      const fb = [e.warm && "Riscaldamento: " + e.warm.map(s => kg(s.kg) + "×" + s.reps).join(", "), e.note].filter(Boolean).join(" · ");
+      if (fb) put(XCOL.feedback + off, r, fb);
       // Valori già calcolati, per chi apre il file in un'anteprima che non ricalcola le formule.
       put(XCOL.reptot + off, r, { f: e.sets.slice(0, 10).reduce((a, s) => a + s.reps, 0) });
       put(XCOL.tonn + off, r, { f: e.sets.slice(0, 10).reduce((a, s) => a + s.kg * s.reps, 0) });
@@ -1278,6 +1297,14 @@ document.addEventListener("click", e => {
   if (b.dataset.pick) { S.pick = b.dataset.pick; return renderHome(); }
   if (b.id === "start") { if (S.active) return go("work"); return startWorkout(b.dataset.day, Number(b.dataset.week)); }
   if (b.dataset.wk) { S.wpick = Number(b.dataset.wk); S.pick = null; return renderHome(); }
+  if (b.dataset.wtick) { const [ei, j] = b.dataset.wtick.split("-").map(Number); return wtick(ei, j); }
+  if (b.dataset.warm) {
+    const A = S.active, ei = A.idx, w = (A.warm ||= {}), n = w[ei] || 0;
+    if (Number(b.dataset.warm) > 0) { if (n < 6) w[ei] = n + 1; } else if (n) { delete A.sets[ei + "-r" + (n - 1)]; w[ei] = n - 1; }
+    saveActive(); renderWork();
+    if (Number(b.dataset.warm) > 0) { const i = document.getElementById("kg-" + ei + "-r" + n); i && i.focus(); }
+    return;
+  }
   if (b.dataset.tick) { const [ei, si] = b.dataset.tick.split("-").map(Number); return tick(ei, si); }
   if (b.dataset.ex) { S.active.idx = Number(b.dataset.ex); saveActive(); renderWork(); return window.scrollTo(0, 0); }
   if (b.dataset.extra) {
