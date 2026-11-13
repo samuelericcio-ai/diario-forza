@@ -233,6 +233,13 @@ button.lift{border:0;text-align:left;color:inherit}
 .ico{width:14px;height:14px;flex:none}
 .nameform{display:flex;gap:8px;width:100%}
 .nameform input{flex:1;min-width:0;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:16px;padding:0 12px}
+.vsheet{position:fixed;inset:0;z-index:25;background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 160px}
+.vsheet .in{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.vsheet .top{display:flex;align-items:center;gap:10px}
+.vsheet .top b{flex:1;min-width:0;font-family:var(--display);font-size:26px;text-transform:uppercase;line-height:1}
+.vsheet .frame{width:100%;aspect-ratio:16/9;border:0;border-radius:14px;background:#000}
+.vsheet .vid[aria-current="true"]{box-shadow:inset 0 0 0 2px var(--red)}
+.vsheet .vid{border:0;width:100%;text-align:left;font:inherit}
 .vid{display:flex;gap:12px;align-items:center;padding:10px;text-decoration:none;color:inherit}
 .vid .th{width:116px;aspect-ratio:16/9;border-radius:10px;background:var(--card2) center/cover no-repeat;flex:none;display:grid;place-items:center;color:var(--muted)}
 .vid b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
@@ -272,6 +279,7 @@ body.no-tabs .tabbar{display:none}
 <main class="screen" id="v-work" hidden></main>
 <main class="screen" id="v-prog" hidden></main>
 <main class="screen" id="v-info" hidden></main>
+<div class="vsheet" id="vsheet" hidden role="dialog" aria-modal="true" aria-label="Video dell'esercizio"></div>
 
 <div class="rest" id="rest" hidden>
   <div class="in">
@@ -300,7 +308,7 @@ body.no-tabs .tabbar{display:none}
 <script>
 // Scheda "RICCIO SAMUELE 6-12-2026 1° fase di aumento carichi ondulata settimanale": 5 giorni × 6 settimane.
 // w[i] = [serie, rip, recupero, RIR, intensità, nota] della settimana i+1; null = non previsto quella settimana.
-const APP_VERSION = 16; // uguale al numero di VERSION in sw.js
+const APP_VERSION = 17; // uguale al numero di VERSION in sw.js
 const PLAN_ID = "2026-12-06", PLAN_LABEL = "Scheda 06/12/26", WEEKS = 6;
 const DAYS = [
  {id:"A", short:"Spinta", title:"Spinta · Forza", color:"var(--red)", ex:[
@@ -631,7 +639,7 @@ function renderWork(){
       <h1 class="big" style="font-size:40px;line-height:.95">${esc(ex.n)}</h1>
       <div class="chips"><span>${esc(ex.sl)}×${esc(ex.r)}</span><span>rec ${ex.ss === "A" ? "dopo B" : esc(ex.ss === "B" ? p.ex[ei - 1].restL : ex.restL)}</span><span>RIR ${esc(ex.rir)}</span><span>${esc(ex.int)}${pk ? " ≈ " + kg(pk) + " kg" : ""}</span>${ex.ss ? `<span class="ss">Superserie ${ex.ss}</span>` : ""}</div>
       ${ex.note ? `<p class="note">${esc(ex.note)}</p>` : ""}
-      <button class="link" data-info="${esc(ex.n)}" style="align-self:flex-start;height:32px">Come si fa: video e dettagli ›</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${(VIDEOS[ex.n] || []).length ? `<button class="btn2" data-vplay="${esc(ex.n)}|0" style="height:38px">▶&nbsp;Guarda il video</button>` : ""}<button class="link" data-info="${esc(ex.n)}" style="height:38px">Dettagli ›</button></div>
       ${ex.ss ? `<p class="note">${ex.ss === "A" ? "Fai una serie, poi passa subito a " + esc(nx.n) + "." : "Dopo questa serie: recupero, poi di nuovo " + esc(p.ex[ei - 1].n) + "."}</p>` : ""}
     </div>
     <div class="sets">
@@ -1012,7 +1020,7 @@ function renderInfo(){
     <div style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Video e foto</span>
       ${online ? "" : `<p class="note">Sei senza connessione: i video si aprono quando torni online.</p>`}
-      ${vids.map(([id, t, ch, len]) => `<a class="card vid" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">
+      ${vids.map(([id, t, ch, len]) => `<a class="card vid" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener" data-vplay="${esc(name)}|${vids.findIndex(v => v[0] === id)}">
         <span class="th" style="${online ? `background-image:url('https://i.ytimg.com/vi/${id}/mqdefault.jpg')` : ""}">${online ? "" : "▶"}</span>
         <span><b>${esc(t)}</b><small>${esc(ch)} · ${esc(len)}</small></span></a>`).join("")}
       ${webLinks(name.replace(/_/g, " "))}
@@ -1043,12 +1051,28 @@ function render(){
   if (S.view === "prog") renderProg();
   if (S.view === "info") S.info ? renderInfo() : renderSearch();
 }
-function go(v){ S.view = v; if (v === "work" || v === "prog") S.pick = null; render(); window.scrollTo(0, 0); }
+function go(v){ closeVideo(); S.view = v; if (v === "work" || v === "prog") S.pick = null; render(); window.scrollTo(0, 0); }
 function openInfo(name){
   if (S.view !== "info") { S.infoFrom = S.view; S.fromSearch = false; } else if (!S.info) S.fromSearch = true;
   S.info = name; S.view = "info"; render(); window.scrollTo(0, 0);
 }
 
+// Video dentro l'app: si guarda senza uscire, il timer di recupero resta sopra.
+function openVideo(name, i){
+  const vids = VIDEOS[name] || [], v = vids[i]; if (!v) return;
+  const box = $("#vsheet"), online = navigator.onLine !== false;
+  box.innerHTML = `<div class="in">
+    <div class="top"><b>${esc(name)}</b><button class="btn2" data-vclose="1">Chiudi</button></div>
+    ${online ? `<iframe class="frame" src="https://www.youtube-nocookie.com/embed/${v[0]}?playsinline=1&rel=0&autoplay=1" title="${esc(v[1])}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+      : `<div class="card empty">Sei senza connessione: il video si vede quando torni online.</div>`}
+    <div><b style="font-size:15px">${esc(v[1])}</b><div class="muted" style="font-size:13px">${esc(v[2])} · ${esc(v[3])} · <a href="https://www.youtube.com/watch?v=${v[0]}" target="_blank" rel="noopener" style="color:var(--red)">Apri su YouTube ↗</a></div></div>
+    ${vids.length > 1 ? `<span class="label">Altri video</span>${vids.map(([id, t, ch, len], j) => `<button class="card vid" data-vplay="${esc(name)}|${j}" aria-current="${j === i}">
+      <span class="th" style="${online ? `background-image:url('https://i.ytimg.com/vi/${id}/mqdefault.jpg')` : ""}">${online ? "" : "▶"}</span>
+      <span><b>${esc(t)}</b><small>${esc(ch)} · ${esc(len)}</small></span></button>`).join("")}` : ""}
+  </div>`;
+  box.hidden = false; box.scrollTop = 0; document.body.style.overflow = "hidden";
+}
+function closeVideo(){ const box = $("#vsheet"); box.hidden = true; box.innerHTML = ""; document.body.style.overflow = ""; }
 let toastT;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
 
@@ -1296,7 +1320,10 @@ document.addEventListener("click", e => {
   unlockAudio();
   const mg = e.target.closest("[data-meas]");
   if (mg) { S.meas = mg.dataset.meas; return renderProg(); }
+  const vp = e.target.closest("[data-vplay]");
+  if (vp) { e.preventDefault(); const [n, i] = vp.dataset.vplay.split("|"); return openVideo(n, Number(i)); }
   const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.vclose) return closeVideo();
   if (b.dataset.go) return go(b.dataset.go);
   if (b.dataset.info) return openInfo(b.dataset.info);
   if (b.id === "search-btn") { S.infoFrom = S.view; S.info = null; go("info"); const q = $("#q"); q && q.focus(); return; }
